@@ -128,22 +128,6 @@ struct GlassBackground: View {
             }
         }
 
-        var shadowRadius: CGFloat {
-            switch self {
-            case .pill: return 16
-            case .toast: return 44
-            case .panel: return 44
-            case .float: return 34
-            }
-        }
-
-        var shadowY: CGFloat {
-            switch self {
-            case .pill: return 6
-            case .float: return 14
-            default: return 18
-            }
-        }
     }
 
     let kind: Kind
@@ -173,18 +157,9 @@ struct GlassBackground: View {
             // otherwise sample across its rectangular representable bounds.
             .clipShape(shape)
 
-        if kind == .toast {
-            surface.shadow(
-                color: Color.black.opacity(0.60),
-                radius: kind.shadowRadius,
-                x: 0,
-                y: kind.shadowY
-            )
-        } else {
-            // Float/pill sit against a tightly-fitted transparent NSPanel;
-            // panel sits inside an NSPopover that supplies its own shadow.
-            // Drawing another large shadow here clips into rectangular strips.
-            surface
-        }
+        // Float/toast sit in tightly fitted transparent NSPanels and panel sits
+        // inside an NSPopover. Shadows belong to those AppKit containers;
+        // drawing them here clips into rectangular edge strips.
+        surface
     }
 }

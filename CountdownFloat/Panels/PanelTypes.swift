@@ -33,10 +33,12 @@ final class CountdownPanel: NSPanel {
         isReleasedWhenClosed = false
         isOpaque = false
         backgroundColor = .clear
-        // Each SwiftUI shell paints the design-specific shadow (float 34 pt,
-        // setup/toast 44 pt).  Disabling AppKit's generic window shadow avoids
-        // stacking a second, platform-default shadow around the glass shape.
-        hasShadow = false
+        // A SwiftUI shadow on a tightly fitted transparent panel is clipped
+        // into dark rectangular strips along the trailing and bottom edges.
+        // Let the window server render the completion notification's shadow;
+        // it follows the rounded alpha shape without enlarging the hit area.
+        // Float has no window shadow, while NSPopover supplies setup's shadow.
+        hasShadow = kind == .completion
         hidesOnDeactivate = false
         titleVisibility = .hidden
         titlebarAppearsTransparent = true

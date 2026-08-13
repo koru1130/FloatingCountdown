@@ -47,6 +47,10 @@ final class CompletionPanelController: NSObject, NSWindowDelegate {
         super.init()
 
         panel.delegate = self
+        // Keep NSVisualEffectView in the Claude Design's dark HUD treatment
+        // regardless of the user's desktop/system appearance.
+        panel.appearance = NSAppearance(named: .darkAqua)
+        hostingView.appearance = NSAppearance(named: .darkAqua)
         panel.contentView = hostingView
         panel.isMovableByWindowBackground = false
         panel.setAccessibilityTitle("Countdown complete")
@@ -63,9 +67,14 @@ final class CompletionPanelController: NSObject, NSWindowDelegate {
     }
 
     func show() {
-        refreshLayout()
-        placeTopRight()
+        fitContentAndPlace()
         panel.orderFrontRegardless()
+        panel.invalidateShadow()
+
+        // SwiftUI may publish the completed label after the transition that
+        // opens this panel. Measure once more on the next run-loop turn so a
+        // two-line title/body never retains the initial placeholder height.
+        refreshLayout()
     }
 
     func hide() {
@@ -75,10 +84,15 @@ final class CompletionPanelController: NSObject, NSWindowDelegate {
     func refreshLayout() {
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
-            self.hostingView.invalidateIntrinsicContentSize()
-            self.panel.sizeToFitContent(minimumWidth: 300)
-            self.placeTopRight()
+            self.fitContentAndPlace()
         }
+    }
+
+    private func fitContentAndPlace() {
+        hostingView.invalidateIntrinsicContentSize()
+        panel.sizeToFitContent(minimumWidth: 300)
+        placeTopRight()
+        panel.invalidateShadow()
     }
 
     private func placeTopRight() {

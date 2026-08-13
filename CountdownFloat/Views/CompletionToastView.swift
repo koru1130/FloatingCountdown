@@ -72,16 +72,11 @@ struct CompletionToastView: View {
         .padding(.vertical, 11.2)
         .padding(.horizontal, 16.8)
         .frame(width: 300, alignment: .leading)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(CompletionToastPalette.surface.opacity(0.90))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(CompletionToastPalette.edge, lineWidth: 1)
-        )
-        .shadow(color: CompletionToastPalette.shadow, radius: 22, x: 0, y: 18)
+        // Use the same AppKit-backed dark glass as the Claude Design instead
+        // of SwiftUI's adaptive material. Adaptive material turns nearly
+        // white over a light desktop even though the card has a dark fill.
+        .background(GlassBackground(kind: .toast))
+        .environment(\.colorScheme, .dark)
         .transition(.opacity.combined(with: .offset(y: -6)))
     }
 }
@@ -144,8 +139,5 @@ private enum CompletionToastPalette {
     static let close = Color(red: 0.4588, green: 0.4745, blue: 0.5490)
     static let accent = Color(red: 0.5686, green: 0.5176, blue: 0.8510)
     static let accent300 = Color(red: 0.8235, green: 0.8078, blue: 0.9922)
-    static let surface = Color(red: 0.1373, green: 0.1451, blue: 0.1961)
-    static let edge = accent.opacity(0.50)
     static let divider = Color(red: 0.9137, green: 0.9137, blue: 0.9294).opacity(0.16)
-    static let shadow = Color.black.opacity(0.60)
 }
