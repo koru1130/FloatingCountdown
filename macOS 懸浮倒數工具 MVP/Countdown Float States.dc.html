@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/nocturne-165fbfa2-0f94-48f7-b21d-31f8026d017f/styles.css">
+<script src="_ds/nocturne-165fbfa2-0f94-48f7-b21d-31f8026d017f/_ds_bundle.js"></script>
+<style>
+  body { margin: 0; background: #0d0e17; }
+  a { color: #9184d9; }
+  a:hover { color: #d2cefd; }
+  input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(1) opacity(.5); }
+</style>
+</helmet>
+<div style="width: 880px; padding: 40px 40px 48px; font-family: Inter, system-ui, sans-serif; color: #e9e9ed; background: radial-gradient(110% 62% at 16% 4%, #cfd3e5 0%, rgba(207,211,229,0) 62%), radial-gradient(85% 55% at 90% 96%, #b5afe8 0%, rgba(181,175,232,0) 64%), linear-gradient(160deg, #9397ab 0%, #75798c 46%, #5c5783 100%); user-select: none;">
+
+  <div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 40px;">
+    <div style="font-size: 26px; font-weight: 500; letter-spacing: -0.015em; color: #161826;">Countdown Float — UI states</div>
+    <div style="font-size: 13px; color: #2b2741;">Every surface below is product UI. The wallpaper gradient and the pill captions are presentation only.</div>
+  </div>
+
+  <div style="font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #161826; margin-bottom: 18px;">Float — Bar mode</div>
+  <div style="display: flex; flex-wrap: wrap; gap: 20px 24px; margin-bottom: 52px; align-items: flex-start;">
+
+    <div style="display: flex; flex-direction: column; gap: 12px; align-items: flex-start; contain: paint; padding: 18px 22px 18px 4px;">
+      <div style="position: relative; z-index: 5; font-size: 11px; padding: 3px 9px; border-radius: 999px; background: rgba(22,24,38,0.62); color: #e9e9ed;">Normal</div>
+      <div style="position: relative; padding: 13px 16px 12px; border-radius: 14px; background: rgba(30,32,46,0.52); backdrop-filter: blur(26px) saturate(150%); box-shadow: 0 0 0 1px rgba(233,233,237,0.13), 0 14px 34px rgba(0,0,0,0.5);">
+        <div style="position: relative; z-index: 4; display: inline-flex; flex-direction: column; gap: 7px; width: fit-content;">
+          <div style="font-size: 30px; line-height: 1; font-weight: 500; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; color: #e9e9ed;">18:42</div>
+          <div style="position: relative; height: 2px; border-radius: 2px; background: rgba(233,233,237,0.13); overflow: hidden;">
+            <div style="position: absolute; inset: 0 auto 0 0; width: 74.8%; background: #9184d9; border-radius: 2px;"></div>
+          </div>
+          <div style="font-size: 11px; font-variant-numeric: tabular-nums; color: rgba(233,233,237,0.55); white-space: nowrap; height: 16px;">ends 15:26</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 12px; align-items: flex-start; contain: paint; padding: 18px 22px 18px 4px;">
+      <div style="position: relative; z-index: 5; font-size: 11px; padding: 3px 9px; border-radius: 999px; background: rgba(22,24,38,0.62); color: #e9e9ed;">Hover — controls</div>
+      <div style="position: relative; padding: 13px 16px 12px; border-radius: 14px; background: rgba(30,32,46,0.52); backdrop-filter: blur(26px) saturate(150%); box-shadow: 0 0 0 1px rgba(233,233,237,0.13), 0 14px 34px rgba(0,0,0,0.5);">
+        <div style="position: absolute; top: -11px; right: -8px; display: flex; gap: 3px; padding: 3px; border-radius: 999px; background: rgba(22,24,38,0.82); backdrop-filter: blur(14px); box-shadow: 0 0 0 1px rgba(233,233,237,0.14), 0 6px 16px rgba(0,0,0,0.45); z-index: 3;">
+          <div style="width: 20px; height: 20px; display: grid; place-items: center; border-radius: 999px; background: rgba(145,132,217,0.4); color: #e9e9ed; font-size: 12px; line-height: 1;">⋯</div>
+          <div style="width: 20px; height: 20px; display: grid; place-items: center; border-radius: 999px; background: transparent; color: #e9e9ed; font-size: 11px; line-height: 1;">✕</div>
+        </div>
+        <div style="position: relative; z-index: 4; display: inline-flex; flex-direction: column; gap: 7px; width: fit-content;">
+          <div style="font-size: 30px; line-height: 1; font-weight: 500; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; color: #e9e9ed;">18:42</div>
+          <div style="position: relative; height: 2px; border-radius: 2px; background: rgba(233,233,237,0.13); overflow: hidden;">
+            <div style="position: absolute; inset: 0 auto 0 0; width: 74.8%; background: #9184d9; border-radius: 2px;"></div>
+          </div>
+          <div style="font-size: 11px; font-variant-numeric: tabular-nums; color: rgba(233,233,237,0.55); white-space: nowrap; height: 16px;">ends 15:26</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 12px; align-items: flex-start; contain: paint; padding: 18px 22px 18px 4px;">
+      <div style="position: relative; z-index: 5; font-size: 11px; padding: 3px 9px; border-radius: 999px; background: rgba(22,24,38,0.62); color: #e9e9ed;">Paused</div>
+      <div style="position: relative; padding: 13px 16px 12px; border-radius: 14px; background: rgba(30,32,46,0.52); backdrop-filter: blur(26px) saturate(150%); box-shadow: 0 0 0 1px rgba(233,233,237,0.13), 0 14px 34px rgba(0,0,0,0.5);">
+        <div style="position: relative; z-index: 4; display: inline-flex; flex-direction: column; gap: 7px; width: fit-content;">
+          <div style="font-size: 30px; line-height: 1; font-weight: 500; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; color: #b2b6ca;">18:42</div>
+          <div style="position: relative; height: 2px; border-radius: 2px; background: rgba(233,233,237,0.13); overflow: hidden;">
+            <div style="position: absolute; inset: 0 auto 0 0; width: 74.8%; background: #9184d9; border-radius: 2px;"></div>
+          </div>
+          <div style="font-size: 11px; font-variant-numeric: tabular-nums; color: rgba(233,233,237,0.55); white-space: nowrap; height: 16px;">Paused</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 12px; align-items: flex-start; contain: paint; padding: 18px 22px 18px 4px;">
+      <div style="position: relative; z-index: 5; font-size: 11px; padding: 3px 9px; border-radius: 999px; background: rgba(22,24,38,0.62); color: #e9e9ed;">Urgent — under 5 min</div>
+      <div style="position: relative; padding: 13px 16px 12px; border-radius: 14px; background: rgba(30,32,46,0.52); backdrop-filter: blur(26px) saturate(150%); box-shadow: 0 0 0 1px rgba(233,233,237,0.13), 0 14px 34px rgba(0,0,0,0.5); transform: scale(1.07);">
+        <div style="position: absolute; inset: 0; border-radius: 14px; box-shadow: inset 0 0 0 1.5px #b5abfc, 0 0 28px rgba(181,171,252,0.4); background: rgba(145,132,217,0.16);"></div>
+        <div style="position: relative; z-index: 4; display: inline-flex; flex-direction: column; gap: 7px; width: fit-content;">
+          <div style="font-size: 30px; line-height: 1; font-weight: 500; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; color: #e7e5fe;">04:11</div>
+          <div style="position: relative; height: 2px; border-radius: 2px; background: rgba(233,233,237,0.13); overflow: hidden;">
+            <div style="position: absolute; inset: 0 auto 0 0; width: 16.7%; background: #b5abfc; border-radius: 2px;"></div>
+          </div>
+          <div style="font-size: 11px; font-variant-numeric: tabular-nums; color: rgba(233,233,237,0.55); white-space: nowrap; height: 16px;">ends 15:26</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 12px; align-items: flex-start; contain: paint; padding: 18px 22px 18px 4px;">
+      <div style="position: relative; z-index: 5; font-size: 11px; padding: 3px 9px; border-radius: 999px; background: rgba(22,24,38,0.62); color: #e9e9ed;">Completed — counting up</div>
+      <div style="position: relative; padding: 13px 16px 12px; border-radius: 14px; background: rgba(30,32,46,0.52); backdrop-filter: blur(26px) saturate(150%); box-shadow: 0 0 0 1px rgba(233,233,237,0.13), 0 14px 34px rgba(0,0,0,0.5); transform: scale(1.07);">
+        <div style="position: absolute; inset: 0; border-radius: 14px; box-shadow: inset 0 0 0 1.5px #9184d9, 0 0 34px rgba(145,132,217,0.55); background: rgba(145,132,217,0.14); opacity: 0.85;"></div>
+        <div style="position: relative; z-index: 4; display: inline-flex; flex-direction: column; gap: 7px; width: fit-content;">
+          <div style="font-size: 30px; line-height: 1; font-weight: 500; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; color: #e7e5fe;">+01:07</div>
+          <div style="position: relative; height: 2px; border-radius: 2px; background: rgba(233,233,237,0.13); overflow: hidden;">
+            <div style="position: absolute; inset: 0 auto 0 0; width: 0%; background: #b5abfc; border-radius: 2px;"></div>
+          </div>
+          <div style="font-size: 11px; font-variant-numeric: tabular-nums; color: rgba(233,233,237,0.55); white-space: nowrap; height: 16px;">over time</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #161826; margin-bottom: 18px;">Float — Ring mode</div>
+  <div style="display: flex; flex-wrap: wrap; gap: 20px 24px; margin-bottom: 52px; align-items: flex-start;">
+
+    <div style="display: flex; flex-direction: column; gap: 12px; align-items: flex-start; contain: paint; padding: 18px 22px 18px 4px;">
+      <div style="position: relative; z-index: 5; font-size: 11px; padding: 3px 9px; border-radius: 999px; background: rgba(22,24,38,0.62); color: #e9e9ed;">Normal</div>
+      <div style="position: relative; width: 108px; padding: 13px; border-radius: 14px; background: rgba(30,32,46,0.52); backdrop-filter: blur(26px) saturate(150%); box-shadow: 0 0 0 1px rgba(233,233,237,0.13), 0 14px 34px rgba(0,0,0,0.5);">
+        <div style="position: relative; z-index: 4; display: flex; flex-direction: column; align-items: center; gap: 7px;">
+          <div style="position: relative; width: 82px; height: 82px; flex: none;">
+            <svg viewBox="0 0 100 100" width="100%" height="100%" style="display: block; overflow: visible; transform: rotate(-90deg) scaleY(-1);">
+              <circle cx="50" cy="50" r="44" fill="none" stroke="rgba(233,233,237,0.14)" stroke-width="6"></circle>
+              <circle cx="50" cy="50" r="44" fill="none" stroke="#9184d9" stroke-width="6" stroke-linecap="round" stroke-dasharray="276.5" stroke-dashoffset="69.7"></circle>
+            </svg>
+            <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 20px; line-height: 1; font-weight: 500; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; color: #e9e9ed;">18:42</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 12px; align-items: flex-start; contain: paint; padding: 18px 22px 18px 4px;">
+      <div style="position: relative; z-index: 5; font-size: 11px; padding: 3px 9px; border-radius: 999px; background: rgba(22,24,38,0.62); color: #e9e9ed;">Hover — controls</div>
+      <div style="position: relative; width: 108px; padding: 13px; border-radius: 14px; background: rgba(30,32,46,0.52); backdrop-filter: blur(26px) saturate(150%); box-shadow: 0 0 0 1px rgba(233,233,237,0.13), 0 14px 34px rgba(0,0,0,0.5);">
+        <div style="position: absolute; top: -11px; right: -8px; display: flex; gap: 3px; padding: 3px; border-radius: 999px; background: rgba(22,24,38,0.82); backdrop-filter: blur(14px); box-shadow: 0 0 0 1px rgba(233,233,237,0.14), 0 6px 16px rgba(0,0,0,0.45); z-index: 3;">
+          <div style="width: 20px; height: 20px; display: grid; place-items: center; border-radius: 999px; color: #e9e9ed; font-size: 12px; line-height: 1;">⋯</div>
+          <div style="width: 20px; height: 20px; display: grid; place-items: center; border-radius: 999px; background: rgba(145,132,217,0.4); color: #e9e9ed; font-size: 11px; line-height: 1;">✕</div>
+        </div>
+        <div style="position: relative; z-index: 4; display: flex; flex-direction: column; align-items: center; gap: 7px;">
+          <div style="position: relative; width: 82px; height: 82px; flex: none;">
+            <svg viewBox="0 0 100 100" width="100%" height="100%" style="display: block; overflow: visible; transform: rotate(-90deg) scaleY(-1);">
+              <circle cx="50" cy="50" r="44" fill="none" stroke="rgba(233,233,237,0.14)" stroke-width="6"></circle>
+              <circle cx="50" cy="50" r="44" fill="none" stroke="#9184d9" stroke-width="6" stroke-linecap="round" stroke-dasharray="276.5" stroke-dashoffset="69.7"></circle>
+            </svg>
+            <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 20px; line-height: 1; font-weight: 500; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; color: #e9e9ed;">18:42</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 12px; align-items: flex-start; contain: paint; padding: 18px 22px 18px 4px;">
+      <div style="position: relative; z-index: 5; font-size: 11px; padding: 3px 9px; border-radius: 999px; background: rgba(22,24,38,0.62); color: #e9e9ed;">Urgent — under 5 min</div>
+      <div style="position: relative; width: 108px; padding: 13px; border-radius: 14px; background: rgba(30,32,46,0.52); backdrop-filter: blur(26px) saturate(150%); box-shadow: 0 0 0 1px rgba(233,233,237,0.13), 0 14px 34px rgba(0,0,0,0.5); transform: scale(1.07);">
+        <div style="position: absolute; inset: 0; border-radius: 14px; box-shadow: inset 0 0 0 1.5px #b5abfc, 0 0 28px rgba(181,171,252,0.4); background: rgba(145,132,217,0.16);"></div>
+        <div style="position: relative; z-index: 4; display: flex; flex-direction: column; align-items: center; gap: 7px;">
+          <div style="position: relative; width: 82px; height: 82px; flex: none;">
+            <svg viewBox="0 0 100 100" width="100%" height="100%" style="display: block; overflow: visible; transform: rotate(-90deg) scaleY(-1);">
+              <circle cx="50" cy="50" r="44" fill="none" stroke="rgba(233,233,237,0.14)" stroke-width="6"></circle>
+              <circle cx="50" cy="50" r="44" fill="none" stroke="#b5abfc" stroke-width="6" stroke-linecap="round" stroke-dasharray="276.5" stroke-dashoffset="230.3"></circle>
+            </svg>
+            <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 20px; line-height: 1; font-weight: 500; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; color: #e7e5fe;">04:11</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 12px; align-items: flex-start; contain: paint; padding: 18px 22px 18px 4px;">
+      <div style="position: relative; z-index: 5; font-size: 11px; padding: 3px 9px; border-radius: 999px; background: rgba(22,24,38,0.62); color: #e9e9ed;">Completed — counting up</div>
+      <div style="position: relative; width: 108px; padding: 13px; border-radius: 14px; background: rgba(30,32,46,0.52); backdrop-filter: blur(26px) saturate(150%); box-shadow: 0 0 0 1px rgba(233,233,237,0.13), 0 14px 34px rgba(0,0,0,0.5); transform: scale(1.07);">
+        <div style="position: absolute; inset: 0; border-radius: 14px; box-shadow: inset 0 0 0 1.5px #9184d9, 0 0 34px rgba(145,132,217,0.55); background: rgba(145,132,217,0.14); opacity: 0.85;"></div>
+        <div style="position: relative; z-index: 4; display: flex; flex-direction: column; align-items: center; gap: 7px;">
+          <div style="position: relative; width: 82px; height: 82px; flex: none;">
+            <svg viewBox="0 0 100 100" width="100%" height="100%" style="display: block; overflow: visible; transform: rotate(-90deg) scaleY(-1);">
+              <circle cx="50" cy="50" r="44" fill="none" stroke="rgba(233,233,237,0.14)" stroke-width="6"></circle>
+              <circle cx="50" cy="50" r="44" fill="none" stroke="#b5abfc" stroke-width="6" stroke-linecap="round" stroke-dasharray="276.5" stroke-dashoffset="276.5"></circle>
+            </svg>
+            <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 20px; line-height: 1; font-weight: 500; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; color: #e7e5fe;">+01:07</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 12px; align-items: flex-start; contain: paint; padding: 18px 22px 18px 4px;">
+      <div style="position: relative; z-index: 5; font-size: 11px; padding: 3px 9px; border-radius: 999px; background: rgba(22,24,38,0.62); color: #e9e9ed;">Menu bar extra</div>
+      <div style="display: flex; align-items: center; gap: 6px; padding: 2px 8px; border-radius: 5px; font-size: 12.5px; font-variant-numeric: tabular-nums; color: #d2cefd; background: rgba(145,132,217,0.16);">
+        <span style="width: 6px; height: 6px; border-radius: 50%; background: #9184d9;"></span>
+        <span>18:42</span>
+      </div>
+      <div style="position: relative; z-index: 5; font-size: 11px; padding: 3px 9px; border-radius: 999px; background: rgba(22,24,38,0.62); color: #e9e9ed;">Hover</div>
+      <div style="display: flex; align-items: center; gap: 6px; padding: 2px 8px; border-radius: 5px; font-size: 12.5px; font-variant-numeric: tabular-nums; color: #d2cefd; background: rgba(145,132,217,0.28);">
+        <span style="width: 6px; height: 6px; border-radius: 50%; background: #9184d9;"></span>
+        <span>18:42</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #161826; margin-bottom: 18px;">Panels</div>
+  <div style="display: flex; flex-wrap: wrap; gap: 20px 24px; align-items: flex-start;">
+
+    <div style="display: flex; flex-direction: column; gap: 12px; align-items: flex-start; contain: paint; padding: 18px 22px 18px 4px;">
+      <div style="position: relative; z-index: 5; font-size: 11px; padding: 3px 9px; border-radius: 999px; background: rgba(22,24,38,0.62); color: #e9e9ed;">Setup — Duration</div>
+      <div style="width: 312px; padding: 16.8px; border-radius: 14px; background: rgba(35,37,50,0.86); backdrop-filter: blur(30px) saturate(140%); box-shadow: 0 0 0 1px rgba(233,233,237,0.12), 0 18px 44px rgba(0,0,0,0.6);">
+        <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 11.2px;">
+          <div style="font-size: 16px; font-weight: 500; line-height: 1.12; letter-spacing: -0.015em;">Set countdown</div>
+          <div style="color: #75798c; font-size: 15px;">✕</div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 3px; padding: 3px; border-radius: 8px; background: rgba(22,24,38,0.7); margin-bottom: 16.8px;">
+          <div style="border-radius: 5px; padding: 6px 0; font-size: 13px; text-align: center; color: #9397ab;">At a time</div>
+          <div style="border-radius: 5px; padding: 6px 0; font-size: 13px; text-align: center; background: rgba(145,132,217,0.26); color: #e9e9ed;">Duration</div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 11.2px; margin-bottom: 16.8px;">
+          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 5.6px;">
+            <div style="padding: 7px 0; text-align: center; border-radius: 4px; font-size: 13px; font-variant-numeric: tabular-nums; border: 1px solid rgba(233,233,237,0.16); color: #b2b6ca;">5m</div>
+            <div style="padding: 7px 0; text-align: center; border-radius: 4px; font-size: 13px; font-variant-numeric: tabular-nums; border: 1px solid rgba(233,233,237,0.16); color: #b2b6ca;">15m</div>
+            <div style="padding: 7px 0; text-align: center; border-radius: 4px; font-size: 13px; font-variant-numeric: tabular-nums; background: rgba(145,132,217,0.22); border: 1px solid #9184d9; color: #e7e5fe;">25m</div>
+            <div style="padding: 7px 0; text-align: center; border-radius: 4px; font-size: 13px; font-variant-numeric: tabular-nums; border: 1px solid rgba(233,233,237,0.16); color: #b2b6ca;">60m</div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8.4px; font-size: 12.5px; color: #b2b6ca;">
+            <span>Custom</span>
+            <div style="width: 84px; min-height: 36px; padding: 6px 10px; font-size: 14px; text-align: right; font-variant-numeric: tabular-nums; color: #e9e9ed; background: #232532; border: 1px solid rgba(233,233,237,0.16); border-radius: 8px;">25</div>
+            <span>min</span>
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 5.6px; margin-bottom: 11.2px;">
+          <div style="display: flex; align-items: center; gap: 8.4px; font-size: 12.5px; color: #b2b6ca;">
+            <span>Full span</span>
+            <div style="width: 84px; min-height: 36px; padding: 6px 10px; font-size: 14px; text-align: right; color: rgba(233,233,237,0.45); background: #232532; border: 1px solid rgba(233,233,237,0.16); border-radius: 8px;">—</div>
+            <span>min</span>
+          </div>
+          <div style="font-size: 11.5px; color: rgba(233,233,237,0.55);">Optional — what a full bar or ring stands for. Blank uses the whole countdown.</div>
+        </div>
+        <div style="min-height: 36px; padding: 6px 10px; font-size: 14px; color: rgba(233,233,237,0.45); background: #232532; border: 1px solid rgba(233,233,237,0.16); border-radius: 8px; margin-bottom: 11.2px;">Label (optional)</div>
+        <div style="margin-bottom: 16.8px;">
+          <div style="font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(233,233,237,0.55); margin-bottom: 5.6px;">Float style</div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5.6px;">
+            <div style="padding: 7px 0; text-align: center; border-radius: 4px; font-size: 13px; background: rgba(145,132,217,0.22); border: 1px solid #9184d9; color: #e7e5fe;">Bar</div>
+            <div style="padding: 7px 0; text-align: center; border-radius: 4px; font-size: 13px; border: 1px solid rgba(233,233,237,0.16); color: #b2b6ca;">Ring</div>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8.4px;">
+          <div style="flex: 1; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 500; line-height: 1.2; padding: 5.6px 10.08px; border-radius: 8px; color: #9184d9; border: 1px solid #9184d9;">Start</div>
+          <span style="font-size: 11.5px; font-variant-numeric: tabular-nums; color: rgba(233,233,237,0.55);">25:00 · ends 15:26</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 12px; align-items: flex-start; contain: paint; padding: 18px 22px 18px 4px;">
+      <div style="position: relative; z-index: 5; font-size: 11px; padding: 3px 9px; border-radius: 999px; background: rgba(22,24,38,0.62); color: #e9e9ed;">Setup — At a time</div>
+      <div style="width: 312px; padding: 16.8px; border-radius: 14px; background: rgba(35,37,50,0.86); backdrop-filter: blur(30px) saturate(140%); box-shadow: 0 0 0 1px rgba(233,233,237,0.12), 0 18px 44px rgba(0,0,0,0.6);">
+        <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 11.2px;">
+          <div style="font-size: 16px; font-weight: 500; line-height: 1.12; letter-spacing: -0.015em;">Set countdown</div>
+          <div style="color: #75798c; font-size: 15px;">✕</div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 3px; padding: 3px; border-radius: 8px; background: rgba(22,24,38,0.7); margin-bottom: 16.8px;">
+          <div style="border-radius: 5px; padding: 6px 0; font-size: 13px; text-align: center; background: rgba(145,132,217,0.26); color: #e9e9ed;">At a time</div>
+          <div style="border-radius: 5px; padding: 6px 0; font-size: 13px; text-align: center; color: #9397ab;">Duration</div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 5.6px; margin-bottom: 16.8px;">
+          <div style="min-height: 36px; padding: 6px 10px; font-size: 17px; font-variant-numeric: tabular-nums; color: #e9e9ed; background: #232532; border: 1px solid rgba(233,233,237,0.16); border-radius: 8px;">15:00</div>
+          <div style="font-size: 11.5px; color: rgba(233,233,237,0.55);">A time already past counts as tomorrow.</div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 5.6px; margin-bottom: 11.2px;">
+          <div style="display: flex; align-items: center; gap: 8.4px; font-size: 12.5px; color: #b2b6ca;">
+            <span>Start time</span>
+            <div style="width: 108px; min-height: 36px; padding: 6px 10px; font-size: 14px; font-variant-numeric: tabular-nums; color: rgba(233,233,237,0.45); background: #232532; border: 1px solid rgba(233,233,237,0.16); border-radius: 8px;">--:--</div>
+          </div>
+          <div style="font-size: 11.5px; color: rgba(233,233,237,0.55);">Optional — only used to size the bar or ring. Blank uses the whole countdown.</div>
+        </div>
+        <div style="min-height: 36px; padding: 6px 10px; font-size: 14px; color: rgba(233,233,237,0.45); background: #232532; border: 1px solid rgba(233,233,237,0.16); border-radius: 8px; margin-bottom: 11.2px;">Label (optional)</div>
+        <div style="margin-bottom: 16.8px;">
+          <div style="font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(233,233,237,0.55); margin-bottom: 5.6px;">Float style</div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5.6px;">
+            <div style="padding: 7px 0; text-align: center; border-radius: 4px; font-size: 13px; border: 1px solid rgba(233,233,237,0.16); color: #b2b6ca;">Bar</div>
+            <div style="padding: 7px 0; text-align: center; border-radius: 4px; font-size: 13px; background: rgba(145,132,217,0.22); border: 1px solid #9184d9; color: #e7e5fe;">Ring</div>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8.4px;">
+          <div style="flex: 1; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 500; line-height: 1.2; padding: 5.6px 10.08px; border-radius: 8px; color: #9184d9; border: 1px solid #9184d9;">Start</div>
+          <span style="font-size: 11.5px; font-variant-numeric: tabular-nums; color: rgba(233,233,237,0.55);">42:13</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 12px; align-items: flex-start; contain: paint; padding: 18px 22px 18px 4px;">
+      <div style="position: relative; z-index: 5; font-size: 11px; padding: 3px 9px; border-radius: 999px; background: rgba(22,24,38,0.62); color: #e9e9ed;">Menu — from menu bar</div>
+      <div style="width: 232px; padding: 8.4px; border-radius: 14px; background: rgba(35,37,50,0.86); backdrop-filter: blur(30px) saturate(140%); box-shadow: 0 0 0 1px rgba(233,233,237,0.12), 0 18px 44px rgba(0,0,0,0.6);">
+        <div style="display: flex; flex-direction: column;">
+          <div style="font-size: 13.5px; color: #e9e9ed; padding: 7px 11.2px; border-radius: 4px; background: rgba(145,132,217,0.18);">Hide float</div>
+          <div style="font-size: 13.5px; color: #e9e9ed; padding: 7px 11.2px; border-radius: 4px;">Change…</div>
+          <div style="font-size: 13.5px; color: #e9e9ed; padding: 7px 11.2px; border-radius: 4px;">Pause</div>
+          <div style="font-size: 13.5px; color: #e9e9ed; padding: 7px 11.2px; border-radius: 4px;">Add 5 min</div>
+          <div style="height: 1px; margin: 5.6px 11.2px; background: rgba(233,233,237,0.10);"></div>
+          <div style="font-size: 13.5px; color: #b2b6ca; padding: 7px 11.2px; border-radius: 4px;">Cancel countdown</div>
+        </div>
+      </div>
+      <div style="position: relative; z-index: 5; font-size: 11px; padding: 3px 9px; border-radius: 999px; background: rgba(22,24,38,0.62); color: #e9e9ed; margin-top: 20px;">Completion toast</div>
+      <div style="width: 300px; padding: 11.2px 16.8px; border-radius: 14px; background: rgba(35,37,50,0.9); backdrop-filter: blur(30px); box-shadow: 0 0 0 1px rgba(145,132,217,0.5), 0 18px 44px rgba(0,0,0,0.6);">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px;">
+          <div style="font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #d2cefd;">Countdown</div>
+          <div style="color: #75798c; font-size: 13px;">✕</div>
+        </div>
+        <div style="font-size: 15px; margin-bottom: 5.6px;">Countdown — time's up</div>
+        <div style="font-size: 12.5px; color: rgba(233,233,237,0.55); margin-bottom: 11.2px;">The float keeps counting up until you end or extend it.</div>
+        <div style="display: flex; gap: 5.6px;">
+          <div style="font-size: 12.5px; padding: 5px 10px; border-radius: 8px; border: 1px solid rgba(233,233,237,0.16); color: #e9e9ed;">Add 5 min</div>
+          <div style="font-size: 12.5px; padding: 5px 10px; border-radius: 8px; color: #9184d9;">End</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1560,&quot;height&quot;:1500}}"></script>
+</body>
+</html>
