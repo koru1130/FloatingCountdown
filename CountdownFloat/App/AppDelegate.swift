@@ -139,6 +139,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
             onChange: { [weak self] in
                 self?.showSetup()
             },
+            scaleSettings: floatController.scaleSettings,
+            onDecreaseFloatSize: { [weak self] in
+                self?.floatController.decreaseScale()
+            },
+            onResetFloatSize: { [weak self] in
+                self?.floatController.resetScale()
+            },
+            onIncreaseFloatSize: { [weak self] in
+                self?.floatController.increaseScale()
+            },
             onReset: { [weak self] in
                 self?.store.reset()
             },

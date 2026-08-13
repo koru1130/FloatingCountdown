@@ -8,11 +8,15 @@ import SwiftUI
 /// state in sync.
 struct CountdownMenuView: View {
     @ObservedObject private var store: CountdownStore
+    @ObservedObject private var scaleSettings: FloatScaleSettings
 
     private let isFloatHidden: Bool
     private let onShowFloat: () -> Void
     private let onHideFloat: () -> Void
     private let onChange: () -> Void
+    private let onDecreaseFloatSize: () -> Void
+    private let onResetFloatSize: () -> Void
+    private let onIncreaseFloatSize: () -> Void
     private let onReset: () -> Void
     private let onStop: (() -> Void)?
     private let onDismiss: () -> Void
@@ -24,6 +28,10 @@ struct CountdownMenuView: View {
         onShowFloat: @escaping () -> Void = {},
         onHideFloat: @escaping () -> Void = {},
         onChange: @escaping () -> Void = {},
+        scaleSettings: FloatScaleSettings = FloatScaleSettings(),
+        onDecreaseFloatSize: (() -> Void)? = nil,
+        onResetFloatSize: (() -> Void)? = nil,
+        onIncreaseFloatSize: (() -> Void)? = nil,
         onReset: (() -> Void)? = nil,
         onCancel: (() -> Void)? = nil,
         onStop: (() -> Void)? = nil,
@@ -31,10 +39,14 @@ struct CountdownMenuView: View {
         onQuit: @escaping () -> Void = {}
     ) {
         self.store = store
+        self._scaleSettings = ObservedObject(wrappedValue: scaleSettings)
         self.isFloatHidden = isFloatHidden
         self.onShowFloat = onShowFloat
         self.onHideFloat = onHideFloat
         self.onChange = onChange
+        self.onDecreaseFloatSize = onDecreaseFloatSize ?? { scaleSettings.decrease() }
+        self.onResetFloatSize = onResetFloatSize ?? { scaleSettings.reset() }
+        self.onIncreaseFloatSize = onIncreaseFloatSize ?? { scaleSettings.increase() }
         self.onReset = onReset ?? { store.cancel() }
         // Keep accepting the old callback label for clients that construct the
         // menu directly; new callers should use `onStop`.
@@ -79,6 +91,8 @@ struct CountdownMenuView: View {
             }
             .disabled(!store.hasCountdown)
 
+            floatSizeRow
+
             Rectangle()
                 .fill(CountdownMenuPalette.separator)
                 .frame(height: 1)
@@ -111,6 +125,96 @@ struct CountdownMenuView: View {
         .shadow(color: CountdownMenuPalette.shadow, radius: 22, x: 0, y: 18)
         .transition(.opacity.combined(with: .offset(y: -6)))
         .animation(.easeOut(duration: 0.16), value: store.hasCountdown)
+    }
+
+    private var floatSizeRow: some View {
+        HStack(spacing: 5.6) {
+            Text("Float size")
+                .font(.system(size: 13.5, weight: .regular))
+                .foregroundStyle(CountdownMenuPalette.text)
+                .lineLimit(1)
+
+            Spacer(minLength: 0)
+
+            FloatSizeButton(
+                symbol: "−",
+                accessibilityLabel: "Decrease float size",
+                isDisabled: isAtMinimumScale
+            ) {
+                perform(onDecreaseFloatSize)
+            }
+
+            Button(action: { perform(onResetFloatSize) }) {
+                Text(scalePercentage)
+                    .font(.system(size: 12.5, weight: .regular, design: .monospaced))
+                    .foregroundStyle(CountdownMenuPalette.text)
+                    .frame(minWidth: 42, minHeight: 28)
+                    .contentShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+            }
+            .buttonStyle(.plain)
+            .background(
+                RoundedRectangle(cornerRadius: 4, style: .continuous)
+                    .fill(CountdownMenuPalette.accent.opacity(0.14))
+            )
+            .accessibilityLabel("Reset float size")
+            .accessibilityValue(Text("\(scalePercent) percent"))
+
+            FloatSizeButton(
+                symbol: "+",
+                accessibilityLabel: "Increase float size",
+                isDisabled: isAtMaximumScale
+            ) {
+                perform(onIncreaseFloatSize)
+            }
+        }
+        .frame(maxWidth: .infinity, minHeight: 28, alignment: .leading)
+        .padding(.vertical, 1)
+        .padding(.horizontal, 11.2)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Float size")
+        .accessibilityValue(Text("\(scalePercent) percent"))
+    }
+
+    private var scalePercent: Int {
+        Int((scaleSettings.scale * 100).rounded())
+    }
+
+    private var scalePercentage: String {
+        "\(scalePercent)%"
+    }
+
+    private var isAtMinimumScale: Bool {
+        scaleSettings.scale <= FloatScaleSettings.minimumScale + 0.000_1
+    }
+
+    private var isAtMaximumScale: Bool {
+        scaleSettings.scale >= FloatScaleSettings.maximumScale - 0.000_1
+    }
+}
+
+private struct FloatSizeButton: View {
+    let symbol: String
+    let accessibilityLabel: String
+    let isDisabled: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Text(symbol)
+                .font(.system(size: 16, weight: .regular))
+                .foregroundStyle(CountdownMenuPalette.text)
+                .frame(width: 28, height: 28)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .background(
+            RoundedRectangle(cornerRadius: 4, style: .continuous)
+                .fill(CountdownMenuPalette.accent.opacity(0.14))
+        )
+        .contentShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+        .disabled(isDisabled)
+        .opacity(isDisabled ? 0.45 : 1)
+        .accessibilityLabel(accessibilityLabel)
     }
 }
 
