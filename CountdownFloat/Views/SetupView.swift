@@ -242,10 +242,11 @@ struct SetupView: View {
                 .foregroundColor(isSelected ? Self.text : Self.neutral500)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 6)
+                .background(isSelected ? Self.accent.opacity(0.26) : .clear)
+                .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
+                .contentShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
         }
         .buttonStyle(.plain)
-        .background(isSelected ? Self.accent.opacity(0.26) : .clear)
-        .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
     }
 
     private func chip(_ title: String, selected: Bool, action: @escaping () -> Void) -> some View {
@@ -255,15 +256,15 @@ struct SetupView: View {
                 .foregroundColor(selected ? Self.accent200 : Self.neutral400)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 7)
+                .background(selected ? Self.accent.opacity(0.22) : .clear)
+                .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 4, style: .continuous)
+                        .stroke(selected ? Self.accent : Self.divider, lineWidth: 1)
+                }
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .background(selected ? Self.accent.opacity(0.22) : .clear)
-        .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 4, style: .continuous)
-                .stroke(selected ? Self.accent : Self.divider, lineWidth: 1)
-        }
     }
 
     private func numericField(

@@ -214,4 +214,37 @@ final class CountdownStoreTests: XCTestCase {
         XCTAssertEqual(store.displayText, "00:00")
         XCTAssertEqual(store.captionText, "Set countdown")
     }
+
+    func testStopClearsCountdownAndEmitsStoppedTransition() {
+        let clock = TestClock(date())
+        let store = makeStore(at: clock.date, clock)
+        var transitions = [CountdownTransition]()
+        store.onTransition = { transitions.append($0) }
+
+        store.start(minutes: 5)
+        transitions.removeAll()
+        store.stop()
+
+        XCTAssertEqual(store.status, .idle)
+        XCTAssertFalse(store.hasCountdown)
+        XCTAssertNil(store.endAt)
+        XCTAssertEqual(store.totalMilliseconds, 0)
+        XCTAssertEqual(store.remainingMilliseconds, 0)
+        XCTAssertEqual(store.displayText, "00:00")
+        XCTAssertEqual(store.captionText, "Set countdown")
+        XCTAssertEqual(store.lastTransition, .stopped)
+        XCTAssertEqual(transitions, [.stopped])
+    }
+
+    func testStopOnIdleDoesNotEmitAnotherTransition() {
+        let clock = TestClock(date())
+        let store = makeStore(at: clock.date, clock)
+        var transitions = [CountdownTransition]()
+        store.onTransition = { transitions.append($0) }
+
+        store.stop()
+
+        XCTAssertTrue(transitions.isEmpty)
+        XCTAssertNil(store.lastTransition)
+    }
 }

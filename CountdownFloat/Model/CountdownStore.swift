@@ -40,6 +40,7 @@ public enum CountdownTransition: Equatable, Sendable {
     case completed
     case extended
     case cancelled
+    case stopped
     case reset
 }
 
@@ -357,7 +358,7 @@ public final class CountdownStore: ObservableObject {
         }
     }
 
-    // MARK: Pause, resume, extend and cancel
+    // MARK: Pause, resume, extend, stop and cancel
 
     public func pause() {
         guard status == .running else { return }
@@ -418,6 +419,17 @@ public final class CountdownStore: ObservableObject {
     public func cancel() {
         guard status != .idle || endAt != nil else { return }
         clearCountdown(transition: .cancelled)
+    }
+
+    /// Stops the active countdown without reopening the setup editor.
+    ///
+    /// `stop` intentionally has its own transition so AppKit coordinators can
+    /// hide the float while keeping the setup popover closed.  Completion's
+    /// existing `cancel`/`End` path remains separate and continues to emit
+    /// ``CountdownTransition/cancelled``.
+    public func stop() {
+        guard status != .idle || endAt != nil else { return }
+        clearCountdown(transition: .stopped)
     }
 
     public func reset() {

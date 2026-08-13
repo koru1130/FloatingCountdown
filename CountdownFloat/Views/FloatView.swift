@@ -48,10 +48,18 @@ struct FloatView: View {
     private var timeColor: Color {
         if statusIsPaused { return CountdownDesign.ColorToken.neutral400 }
         if isUrgent { return CountdownDesign.ColorToken.accent200 }
-        return CountdownDesign.ColorToken.text
+        return CountdownDesign.ColorToken.floatPrimaryText
     }
     private var progressColor: Color {
         isUrgent ? CountdownDesign.ColorToken.accent400 : CountdownDesign.ColorToken.accent
+    }
+
+    private var urgentScale: CGFloat {
+        isUrgent ? 1.07 : 1
+    }
+
+    private var urgentScaleInset: CGFloat {
+        isUrgent ? CountdownDesign.Metrics.urgentScaleInset : 0
     }
 
     var body: some View {
@@ -64,21 +72,27 @@ struct FloatView: View {
                     .zIndex(2)
             }
         }
+        // The controls intentionally overhang the glass by 11 pt at the top
+        // and 8 pt at the trailing edge. Reserve transparent window content
+        // for that overhang so NSPanel does not clip it at its content bounds.
+        .padding(.top, 11)
+        .padding(.trailing, 8)
+        // `scaleEffect` is a render transform and is not reflected in the
+        // NSHostingView fitting size. Add a transparent safety gutter outside
+        // the transform so urgent/completed corners (and their glow) stay
+        // inside the borderless panel on every display scale.
+        .scaleEffect(urgentScale, anchor: .center)
+        .padding(.horizontal, urgentScaleInset)
+        .padding(.vertical, urgentScaleInset)
         .contentShape(Rectangle())
         .onHover { hovering in
             withAnimation(.easeOut(duration: 0.12)) {
                 isHovered = hovering
             }
         }
-        // The controls intentionally overhang the glass by 11 pt at the top
-        // and 8 pt at the trailing edge. Reserve transparent window content
-        // for that overhang so NSPanel does not clip it at its content bounds.
-        .padding(.top, 11)
-        .padding(.trailing, 8)
         .onAppear { beginPulseIfNeeded() }
         .onChange(of: store.isCompleted) { _ in beginPulseIfNeeded() }
-        .scaleEffect(isUrgent ? 1.07 : 1, anchor: .center)
-        .animation(.easeInOut(duration: 0.2), value: isUrgent)
+        .animation(.easeInOut(duration: 0.2), value: urgentScale)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Countdown \(store.displayText)")
     }
@@ -107,7 +121,7 @@ struct FloatView: View {
 
             Text(store.captionText)
                 .font(CountdownDesign.captionFont())
-                .foregroundColor(CountdownDesign.ColorToken.text55)
+                .foregroundColor(CountdownDesign.ColorToken.floatSecondaryText)
                 .lineLimit(1)
                 .truncationMode(.tail)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -208,13 +222,18 @@ private struct FloatControlButton: View {
                 .font(.system(size: pointSize, weight: .regular))
                 .foregroundColor(CountdownDesign.ColorToken.text)
                 .frame(width: CountdownDesign.Metrics.controlButtonSize, height: CountdownDesign.Metrics.controlButtonSize)
-                .contentShape(Circle())
+                // Keep the circular treatment while making the whole visual
+                // button rectangle the hit target (including transparent
+                // glyph-side pixels).
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .frame(width: CountdownDesign.Metrics.controlButtonSize, height: CountdownDesign.Metrics.controlButtonSize)
         .background(
             Circle().fill(isHovered ? CountdownDesign.ColorToken.accent.opacity(0.40) : .clear)
         )
         .clipShape(Circle())
+        .contentShape(Rectangle())
         .onHover { isHovered = $0 }
         .accessibilityLabel(accessibilityLabel)
     }

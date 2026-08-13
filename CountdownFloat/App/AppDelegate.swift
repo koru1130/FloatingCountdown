@@ -144,6 +144,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
             },
             onDismiss: { [weak self] in
                 self?.closeStatusPopover()
+            },
+            onQuit: {
+                NSApp.terminate(nil)
             }
         )
         presentStatusPopover(root, width: 232, relativeTo: button)
@@ -240,6 +243,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         case .completed:
             completionController.show()
             floatController.refreshLayout()
+        case .stopped:
+            completionController.hide()
+            // Stopping from the countdown menu clears the model and hides the
+            // float, but deliberately leaves the setup popover closed.  The
+            // status item can still be clicked later to configure a new one.
+            hideFloat()
         case .cancelled, .reset:
             completionController.hide()
             floatController.hide()

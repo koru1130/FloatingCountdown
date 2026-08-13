@@ -14,8 +14,9 @@ struct CountdownMenuView: View {
     private let onHideFloat: () -> Void
     private let onChange: () -> Void
     private let onReset: () -> Void
-    private let onCancel: (() -> Void)?
+    private let onStop: (() -> Void)?
     private let onDismiss: () -> Void
+    private let onQuit: () -> Void
 
     init(
         store: CountdownStore,
@@ -25,7 +26,9 @@ struct CountdownMenuView: View {
         onChange: @escaping () -> Void = {},
         onReset: (() -> Void)? = nil,
         onCancel: (() -> Void)? = nil,
-        onDismiss: @escaping () -> Void = {}
+        onStop: (() -> Void)? = nil,
+        onDismiss: @escaping () -> Void = {},
+        onQuit: @escaping () -> Void = {}
     ) {
         self.store = store
         self.isFloatHidden = isFloatHidden
@@ -33,8 +36,11 @@ struct CountdownMenuView: View {
         self.onHideFloat = onHideFloat
         self.onChange = onChange
         self.onReset = onReset ?? { store.cancel() }
-        self.onCancel = onCancel
+        // Keep accepting the old callback label for clients that construct the
+        // menu directly; new callers should use `onStop`.
+        self.onStop = onStop ?? onCancel
         self.onDismiss = onDismiss
+        self.onQuit = onQuit
     }
 
     private var pauseTitle: String {
@@ -55,7 +61,7 @@ struct CountdownMenuView: View {
                 perform(isFloatHidden ? onShowFloat : onHideFloat)
             }
 
-            MenuRow(title: "Change…") {
+            MenuRow(title: "Edit") {
                 perform(onChange)
             }
 
@@ -79,13 +85,17 @@ struct CountdownMenuView: View {
                 .padding(.vertical, 5.6)
                 .padding(.horizontal, 11.2)
 
-            MenuRow(title: "Cancel countdown", tint: CountdownMenuPalette.neutral400) {
+            MenuRow(title: "Stop", tint: CountdownMenuPalette.neutral400) {
                 perform {
-                    store.cancel()
-                    onCancel?()
+                    store.stop()
+                    onStop?()
                 }
             }
             .disabled(!store.hasCountdown)
+
+            MenuRow(title: "Quit", tint: CountdownMenuPalette.neutral400) {
+                perform(onQuit)
+            }
         }
         .padding(8.4)
         .frame(width: 232)

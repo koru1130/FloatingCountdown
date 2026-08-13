@@ -7,7 +7,10 @@ import SwiftUI
 /// leaks beyond the rounded glass surface.
 final class RoundedVisualEffectView: NSVisualEffectView {
     var clippingRadius: CGFloat = 0 {
-        didSet { needsLayout = true }
+        didSet {
+            layer?.cornerRadius = clippingRadius
+            needsLayout = true
+        }
     }
 
     private let clippingMask = CAShapeLayer()
@@ -24,19 +27,38 @@ final class RoundedVisualEffectView: NSVisualEffectView {
 
     private func installClippingMask() {
         wantsLayer = true
+        layer?.cornerCurve = .continuous
+        layer?.masksToBounds = true
         layer?.mask = clippingMask
+        clippingMask.fillRule = .nonZero
+        clippingMask.needsDisplayOnBoundsChange = true
+        updateClippingMask()
     }
 
     override func layout() {
         super.layout()
-        clippingMask.frame = bounds
-        let radius = min(clippingRadius, min(bounds.width, bounds.height) / 2)
+        updateClippingMask()
+    }
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        clippingMask.contentsScale = window?.backingScaleFactor ?? 2
+        updateClippingMask()
+    }
+
+    private func updateClippingMask() {
+        guard let layer else { return }
+        let maskBounds = layer.bounds
+        clippingMask.frame = maskBounds
+        clippingMask.bounds = maskBounds
+        let radius = min(clippingRadius, min(maskBounds.width, maskBounds.height) / 2)
         clippingMask.path = CGPath(
-            roundedRect: bounds,
+            roundedRect: maskBounds,
             cornerWidth: radius,
             cornerHeight: radius,
             transform: nil
         )
+        layer.cornerRadius = radius
     }
 }
 
@@ -142,7 +164,14 @@ struct GlassBackground: View {
                 )
                     .clipShape(shape)
             )
-            .overlay(shape.stroke(kind.edge, lineWidth: 1))
+            // Keep the hairline inset. A centered stroke can draw a half-pixel
+            // outside the host bounds and expose a rectangular visual-effect
+            // seam on the leading edge.
+            .overlay(shape.strokeBorder(kind.edge, lineWidth: 1))
+            // This final clip is intentional even though the SwiftUI shape is
+            // already rounded: NSVisualEffectView is AppKit-backed and may
+            // otherwise sample across its rectangular representable bounds.
+            .clipShape(shape)
 
         if kind == .toast {
             surface.shadow(
