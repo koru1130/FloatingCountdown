@@ -2,29 +2,51 @@ import AppKit
 import Combine
 import SwiftUI
 
+/// Mutable presentation inputs for the visible SwiftUI root.
+///
+/// Keeping these values in an observed object lets AppKit resize the panel
+/// without replacing `NSHostingView.rootView`. Replacing the root on every
+/// timer tick recreates SwiftUI's pointer/button identity and makes hover
+/// controls flicker or lose their click target.
+private final class FloatPresentationState: ObservableObject {
+    @Published private(set) var scale: CGFloat
+    @Published private(set) var baseSize: CGSize?
+
+    init(scale: CGFloat, baseSize: CGSize? = nil) {
+        self.scale = scale
+        self.baseSize = baseSize
+    }
+
+    func update(scale: CGFloat, baseSize: CGSize) {
+        if self.scale != scale {
+            self.scale = scale
+        }
+        if self.baseSize != baseSize {
+            self.baseSize = baseSize
+        }
+    }
+}
+
 /// A small SwiftUI shell that makes the user's scale an actual layout
-/// dimension.  `scaleEffect` alone intentionally leaves an
-/// `NSHostingView.fittingSize` unchanged, so the controller first measures
-/// `baseSize` at the unscaled root and then gives the transformed root a frame
-/// of `baseSize * scale`.  That keeps both the panel and its hit area in sync
-/// with what is drawn.
+/// dimension. `scaleEffect` alone intentionally leaves an
+/// `NSHostingView.fittingSize` unchanged, so an off-screen hosting view
+/// measures the unscaled content and this stable visible root receives the
+/// resulting size through `FloatPresentationState`.
 private struct ScaledFloatRoot: View {
     let content: FloatView
-    let scale: CGFloat
-    let baseSize: CGSize?
+    @ObservedObject var presentation: FloatPresentationState
 
     var body: some View {
-        if let baseSize {
+        if let baseSize = presentation.baseSize {
             content
-                .scaleEffect(scale, anchor: .center)
+                .scaleEffect(presentation.scale, anchor: .center)
                 .frame(
-                    width: max(1, baseSize.width * scale),
-                    height: max(1, baseSize.height * scale),
+                    width: max(1, baseSize.width * presentation.scale),
+                    height: max(1, baseSize.height * presentation.scale),
                     alignment: .center
                 )
         } else {
             content
-                .scaleEffect(scale, anchor: .center)
         }
     }
 }
@@ -41,8 +63,9 @@ final class FloatPanelController: NSObject, NSWindowDelegate {
     /// resizes this panel immediately.
     let scaleSettings: FloatScaleSettings
 
-    private let rootContent: FloatView
+    private let presentationState: FloatPresentationState
     private let hostingView: NSHostingView<ScaledFloatRoot>
+    private let measurementHostingView: NSHostingView<FloatView>
     private var storeObservation: AnyCancellable?
     private var scaleObservation: AnyCancellable?
     private let onChange: () -> Void
@@ -90,13 +113,19 @@ final class FloatPanelController: NSObject, NSWindowDelegate {
                 onHide()
             }
         )
-        self.rootContent = view
+        let presentationState = FloatPresentationState(scale: scaleSettings.scale)
+        self.presentationState = presentationState
         self.hostingView = NSHostingView(
             rootView: ScaledFloatRoot(
                 content: view,
-                scale: scaleSettings.scale,
-                baseSize: nil
+                presentation: presentationState
             )
+        )
+        // This view is never attached to a window. It may be invalidated and
+        // laid out freely without disturbing the visible root's @State,
+        // pointer tracking, or Button identity.
+        self.measurementHostingView = NSHostingView(
+            rootView: FloatView(store: store)
         )
 
         super.init()
@@ -226,17 +255,12 @@ final class FloatPanelController: NSObject, NSWindowDelegate {
 
         let oldFrame = panel.frame
 
-        // Remove the explicit frame while measuring so fittingSize represents
-        // the actual content, not the previous scaled panel dimensions.
-        hostingView.rootView = ScaledFloatRoot(
-            content: rootContent,
-            scale: scaleSettings.scale,
-            baseSize: nil
-        )
-        hostingView.invalidateIntrinsicContentSize()
-        hostingView.layoutSubtreeIfNeeded()
+        // Measure with a separate, unscaled host. The visible hosting view's
+        // root is deliberately never reassigned after initialization.
+        measurementHostingView.invalidateIntrinsicContentSize()
+        measurementHostingView.layoutSubtreeIfNeeded()
 
-        let fitting = hostingView.fittingSize
+        let fitting = measurementHostingView.fittingSize
         let measuredBase = validContentSize(fitting) ?? lastBaseContentSize
         guard let measuredBase,
               let scaledSize = FloatPanelGeometry.scaledSize(
@@ -247,11 +271,10 @@ final class FloatPanelController: NSObject, NSWindowDelegate {
         }
         lastBaseContentSize = measuredBase
 
-        // Give the scaled root a real frame. Besides making the visual size
-        // deterministic, this ensures transparent hit area and panel bounds
-        // grow with the user's zoom instead of clipping at fittingSize.
-        hostingView.rootView = ScaledFloatRoot(
-            content: rootContent,
+        // Update presentation values in place. Besides making the visual size
+        // deterministic, this keeps transparent hit area and panel bounds in
+        // sync with the user's zoom without replacing the interactive root.
+        presentationState.update(
             scale: scaleSettings.scale,
             baseSize: measuredBase
         )
