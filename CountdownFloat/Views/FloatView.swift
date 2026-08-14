@@ -15,6 +15,7 @@ struct FloatView: View {
     var alwaysShowControls: Bool
 
     @State private var isHovered = false
+    @State private var isControlsHovered = false
     @State private var pulse = false
 
     init(
@@ -60,7 +61,7 @@ struct FloatView: View {
     }
 
     private var shouldShowControls: Bool {
-        alwaysShowControls || isHovered
+        alwaysShowControls || isHovered || isControlsHovered
     }
 
     var body: some View {
@@ -193,6 +194,7 @@ struct FloatView: View {
         }
         .padding(CountdownDesign.Metrics.controlPillPadding)
         .background(GlassBackground(kind: .pill))
+        .onHover { isControlsHovered = $0 }
     }
 
     private func beginPulseIfNeeded() {
