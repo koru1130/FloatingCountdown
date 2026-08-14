@@ -21,7 +21,11 @@
 </p>
 
 <p align="center">
-  <sub>目前浮窗截圖：Ring 模式與 Bar 模式。</sub>
+  <img src="Assets/Screenshots/countdown-float-vscode.png" alt="Countdown Float 與 Xcode 同時執行" width="850">
+</p>
+
+<p align="center">
+  <sub>目前截圖：Ring 模式、Bar 模式，以及與 Xcode 同時執行的 Countdown Float。</sub>
 </p>
 
 ## 產品介紹
@@ -30,7 +34,15 @@ Countdown Float 是一個原生 macOS 選單列倒數工具。它會在桌面上
 
 倒數由同一個共享狀態管理，浮動視窗、選單列項目、設定面板與完成通知會保持同步。即使暫時隱藏浮動視窗，倒數仍會繼續執行。
 
-> 目前專案以可由 Xcode 建置的 MVP 原始碼形式提供，尚未附上簽章後的 `.app`、DMG 或其他 release binary。
+### ADHD 與時間盲（time blindness）
+
+對有 ADHD 相關時間盲經驗的人，或容易在高度專注時忘記時間的人，Countdown Float 提供持續且一眼可見的剩餘時間提示。把倒數放在桌面上，可以不用一直切換視窗查看時鐘，也更容易察覺時間正在流逝。這是一個生產力輔助工具，不是醫療或診斷工具。
+
+> 目前專案以可由 Xcode 建置的 MVP 原始碼形式提供，也可從 v0.1.0 release 下載預先建置的 `.app`。
+
+## 下載
+
+[下載 Countdown Float v0.1.0](https://github.com/koru1130/FloatingCountdown/releases/download/v0.1.0/CountdownFloat-v0.1.0.app.zip) · [查看所有 releases](https://github.com/koru1130/FloatingCountdown/releases)
 
 ## 產品特色
 
@@ -57,7 +69,7 @@ Countdown Float 是一個原生 macOS 選單列倒數工具。它會在桌面上
 | **Countdown menu** | 控制浮窗顯示、編輯、暫停、延長、停止與退出。 |
 | **Completion toast / notification** | 倒數完成後顯示超時狀態，並提供延長或結束操作。 |
 
-上方兩張是目前 Ring 與 Bar 浮窗的裁切截圖。完整的 UI states 總覽位於 [`DesignFromClaude/handoff/ui-states.png`](DesignFromClaude/handoff/ui-states.png)，它是設計參考圖，不是模擬桌面截圖。
+上方 Ring 與 Bar 截圖呈現目前的浮窗介面，Xcode 截圖則展示 Countdown Float 與原始碼同時執行的畫面。完整的 UI states 總覽位於 [`DesignFromClaude/handoff/ui-states.png`](DesignFromClaude/handoff/ui-states.png)，它是設計參考圖，不是模擬桌面截圖。
 
 ## 系統需求
 

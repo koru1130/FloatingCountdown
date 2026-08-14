@@ -21,7 +21,11 @@
 </p>
 
 <p align="center">
-  <sub>Current float screenshots: Ring mode and Bar mode.</sub>
+  <img src="Assets/Screenshots/countdown-float-vscode.png" alt="Countdown Float running alongside Xcode" width="850">
+</p>
+
+<p align="center">
+  <sub>Current screenshots: Ring mode, Bar mode, and Countdown Float running alongside Xcode.</sub>
 </p>
 
 ## Product overview
@@ -30,7 +34,15 @@ Countdown Float is a native macOS menu-bar countdown utility. It puts a lightwei
 
 The float, menu-bar item, setup panel, and completion notification all use one shared countdown state. Hiding the float only hides the window—the countdown continues to run in the background.
 
-> This project is currently provided as an Xcode-buildable MVP source project. A signed `.app`, DMG, and other release binaries are not included yet.
+### ADHD and time blindness
+
+For people with ADHD-related time blindness—or anyone who loses track of time while deeply focused—Countdown Float provides a persistent, glanceable cue for how much time remains. Keeping the countdown visible on the desktop can make the passage of time easier to notice without repeatedly switching away from the current task. It is a productivity aid, not a medical or diagnostic tool.
+
+> This project is provided as an Xcode-buildable MVP source project. A prebuilt `.app` is also available in the v0.1.0 release.
+
+## Download
+
+[Download Countdown Float v0.1.0](https://github.com/koru1130/FloatingCountdown/releases/download/v0.1.0/CountdownFloat-v0.1.0.app.zip) · [View all releases](https://github.com/koru1130/FloatingCountdown/releases)
 
 ## Features
 
@@ -57,7 +69,7 @@ The float, menu-bar item, setup panel, and completion notification all use one s
 | **Countdown menu** | Control float visibility, edit the countdown, pause, extend, stop, or quit. |
 | **Completion toast / notification** | Shows the over-time state and provides extend or end actions. |
 
-The two cropped screenshots above show the current Ring and Bar float surfaces. The complete UI states reference is available at [`DesignFromClaude/handoff/ui-states.png`](DesignFromClaude/handoff/ui-states.png); it is a design reference rather than a simulated desktop screenshot.
+The Ring and Bar screenshots above show the current float surfaces, and the Xcode screenshot shows the app running alongside its source. The complete UI states reference is available at [`DesignFromClaude/handoff/ui-states.png`](DesignFromClaude/handoff/ui-states.png); it is a design reference rather than a simulated desktop screenshot.
 
 ## Requirements
 
