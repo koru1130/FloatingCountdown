@@ -60,24 +60,17 @@ struct FloatView: View {
         isUrgent ? CountdownDesign.Metrics.urgentScaleInset : 0
     }
 
-    private var shouldShowControls: Bool {
-        alwaysShowControls || isHovered || isControlsHovered
-    }
-
     var body: some View {
         ZStack(alignment: .topTrailing) {
             timerSurface
-            // Keep the pill in the layout at all times. Its opacity changes,
-            // but its position and the root's padded hover region stay fixed.
-            controlsPill
-                .opacity(shouldShowControls ? 1 : 0)
-                .offset(
-                    x: CountdownDesign.Metrics.controlPillOverhangTrailing,
-                    y: -CountdownDesign.Metrics.controlPillOverhangTop
-                )
-                .allowsHitTesting(shouldShowControls)
-                .accessibilityHidden(!shouldShowControls)
-                .zIndex(2)
+            if alwaysShowControls || isHovered || isControlsHovered {
+                controlsPill
+                    .offset(
+                        x: CountdownDesign.Metrics.controlPillOverhangTrailing,
+                        y: -CountdownDesign.Metrics.controlPillOverhangTop
+                    )
+                    .zIndex(2)
+            }
         }
         // The controls intentionally overhang the glass by 11 pt at the top
         // and 8 pt at the trailing edge. Reserve transparent window content
