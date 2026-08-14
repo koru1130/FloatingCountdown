@@ -15,7 +15,6 @@ struct FloatView: View {
     var alwaysShowControls: Bool
 
     @State private var isHovered = false
-    @State private var isControlsHovered = false
     @State private var pulse = false
 
     init(
@@ -46,9 +45,7 @@ struct FloatView: View {
         return min(max(CGFloat(store.progressFraction), 0), 1)
     }
     private var timeColor: Color {
-        if statusIsPaused { return CountdownDesign.ColorToken.neutral400 }
-        if isUrgent { return CountdownDesign.ColorToken.accent200 }
-        return CountdownDesign.ColorToken.floatPrimaryText
+        CountdownDesign.ColorToken.floatPrimaryText
     }
     private var progressColor: Color {
         isUrgent ? CountdownDesign.ColorToken.accent400 : CountdownDesign.ColorToken.accent
@@ -62,21 +59,30 @@ struct FloatView: View {
         isUrgent ? CountdownDesign.Metrics.urgentScaleInset : 0
     }
 
+    private var shouldShowControls: Bool {
+        alwaysShowControls || isHovered
+    }
+
     var body: some View {
         ZStack(alignment: .topTrailing) {
             timerSurface
-            if alwaysShowControls || isHovered || isControlsHovered {
-                controlsPill
-                    .offset(x: 8, y: -11)
-                    .transition(.move(edge: .top).combined(with: .opacity))
-                    .zIndex(2)
-            }
+            // Keep the pill in the layout at all times. Its opacity changes,
+            // but its position and the root's padded hover region stay fixed.
+            controlsPill
+                .opacity(shouldShowControls ? 1 : 0)
+                .offset(
+                    x: CountdownDesign.Metrics.controlPillOverhangTrailing,
+                    y: -CountdownDesign.Metrics.controlPillOverhangTop
+                )
+                .allowsHitTesting(shouldShowControls)
+                .accessibilityHidden(!shouldShowControls)
+                .zIndex(2)
         }
         // The controls intentionally overhang the glass by 11 pt at the top
         // and 8 pt at the trailing edge. Reserve transparent window content
         // for that overhang so NSPanel does not clip it at its content bounds.
-        .padding(.top, 11)
-        .padding(.trailing, 8)
+        .padding(.top, CountdownDesign.Metrics.controlPillOverhangTop)
+        .padding(.trailing, CountdownDesign.Metrics.controlPillOverhangTrailing)
         // `scaleEffect` is a render transform and is not reflected in the
         // NSHostingView fitting size. Add a transparent safety gutter outside
         // the transform so urgent/completed corners (and their glow) stay
@@ -86,9 +92,7 @@ struct FloatView: View {
         .padding(.vertical, urgentScaleInset)
         .contentShape(Rectangle())
         .onHover { hovering in
-            withAnimation(.easeOut(duration: 0.12)) {
-                isHovered = hovering
-            }
+            isHovered = hovering
         }
         .onAppear { beginPulseIfNeeded() }
         .onChange(of: store.isCompleted) { _ in beginPulseIfNeeded() }
@@ -180,20 +184,15 @@ struct FloatView: View {
 
     private var controlsPill: some View {
         HStack(spacing: 3) {
-            FloatControlButton(symbol: "⋯", pointSize: 12, accessibilityLabel: "Change countdown") {
+            FloatControlButton(systemImage: "ellipsis", pointSize: 12, accessibilityLabel: "Change countdown") {
                 onChange?()
             }
-            FloatControlButton(symbol: "✕", pointSize: 11, accessibilityLabel: "Hide countdown") {
+            FloatControlButton(systemImage: "xmark", pointSize: 11, accessibilityLabel: "Hide countdown") {
                 onHide?()
             }
         }
         .padding(CountdownDesign.Metrics.controlPillPadding)
         .background(GlassBackground(kind: .pill))
-        .onHover { hovering in
-            withAnimation(.easeOut(duration: 0.12)) {
-                isControlsHovered = hovering
-            }
-        }
     }
 
     private func beginPulseIfNeeded() {
@@ -209,7 +208,7 @@ struct FloatView: View {
 }
 
 private struct FloatControlButton: View {
-    let symbol: String
+    let systemImage: String
     let pointSize: CGFloat
     let accessibilityLabel: String
     let action: () -> Void
@@ -218,14 +217,19 @@ private struct FloatControlButton: View {
 
     var body: some View {
         Button(action: action) {
-            Text(symbol)
+            Image(systemName: systemImage)
                 .font(.system(size: pointSize, weight: .regular))
-                .foregroundColor(CountdownDesign.ColorToken.text)
+                .symbolRenderingMode(.monochrome)
+                .foregroundStyle(CountdownDesign.ColorToken.text)
                 .frame(width: CountdownDesign.Metrics.controlButtonSize, height: CountdownDesign.Metrics.controlButtonSize)
                 // Keep the circular treatment while making the whole visual
                 // button rectangle the hit target (including transparent
                 // glyph-side pixels).
                 .contentShape(Rectangle())
+                .accessibilityHidden(true)
+                .transaction { transaction in
+                    transaction.animation = nil
+                }
         }
         .buttonStyle(.plain)
         .frame(width: CountdownDesign.Metrics.controlButtonSize, height: CountdownDesign.Metrics.controlButtonSize)
