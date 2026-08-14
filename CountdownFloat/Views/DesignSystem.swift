@@ -34,7 +34,8 @@ enum CountdownDesign {
         static let panelFill = Color(red: 35 / 255, green: 37 / 255, blue: 50 / 255).opacity(0.86)
         static let pillFill = Color(red: 22 / 255, green: 24 / 255, blue: 38 / 255).opacity(0.82)
         static let toastFill = Color(red: 35 / 255, green: 37 / 255, blue: 50 / 255).opacity(0.90)
-        static let urgentGlow = Color(red: 181 / 255, green: 171 / 255, blue: 252 / 255).opacity(0.40)
+        static let urgentBorder = Color(red: 1, green: 59 / 255, blue: 48 / 255)
+        static let urgentGlow = Color(red: 1, green: 59 / 255, blue: 48 / 255).opacity(0.40)
         static let completedGlow = Color(red: 145 / 255, green: 132 / 255, blue: 217 / 255).opacity(0.55)
     }
 

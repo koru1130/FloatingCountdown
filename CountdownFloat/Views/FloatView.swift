@@ -169,7 +169,7 @@ struct FloatView: View {
                 .fill(CountdownDesign.ColorToken.accent.opacity(0.16))
                 .overlay(
                     RoundedRectangle(cornerRadius: CountdownDesign.Metrics.floatRadius, style: .continuous)
-                        .stroke(CountdownDesign.ColorToken.accent400, lineWidth: 1.5)
+                        .stroke(CountdownDesign.ColorToken.urgentBorder, lineWidth: 1.5)
                 )
                 .shadow(color: CountdownDesign.ColorToken.urgentGlow, radius: 28)
                 .allowsHitTesting(false)
