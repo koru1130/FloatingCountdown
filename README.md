@@ -54,7 +54,7 @@ For people with ADHD-related time blindness—or anyone who loses track of time 
 - **Full lifecycle controls**: Start, Pause, Resume, Add 5 min, Stop, and End after completion.
 - **Urgent state**: The final five minutes use a highlighted border, glow, and scale treatment.
 - **Count-up after completion**: Once the countdown reaches zero, it displays `+mm:ss` so you can see how long it has been over time.
-- **Menu-bar controls**: View the remaining time, show or hide the float, edit the countdown, and adjust its size from the menu bar.
+- **Flexible float size**: Adjust the persisted 75%–150% size from the menu bar or by scrolling while the pointer is over the countdown.
 - **System notifications**: Receive a macOS notification when the countdown completes, with direct `Add 5 min` and `End` actions.
 - **No third-party dependencies**: Built with SwiftUI, AppKit, Combine, and UserNotifications.
 
@@ -119,7 +119,7 @@ You can also use the project-local script to build and launch the app:
    - **At a time**: Enter a target time in `HH:mm`; a time that has already passed is treated as tomorrow.
 3. Optionally enter a Full span, Start time, and Label.
 4. Choose `Bar` or `Ring`, then press `Start`.
-5. Drag the float to the position you want. Hover over it to reveal the reconfigure and hide controls.
+5. Drag the float to the position you want. Hover over it to reveal the reconfigure and hide controls, or scroll up/down to enlarge/shrink it.
 6. Click the menu-bar item to open the control menu, including Pause／Resume, Add 5 min, Float size, and Stop.
 7. When the countdown completes, the float switches to counting-up mode and a completion notification appears. If macOS asks for notification permission, allow it to receive system notifications and their quick actions.
 
@@ -197,7 +197,7 @@ The tests cover:
 - `CountdownStore` Start, Pause, Resume, completion, overtime, Add 5 min, Stop, and Reset behavior.
 - Duration and At a time parsing, including the “past target means tomorrow” rule.
 - `mm:ss`, `h:mm:ss`, and `+mm:ss` formatting.
-- Initial float placement, screen-boundary clamping, resize anchors, and persisted scale settings.
+- Initial float placement, screen-boundary clamping, resize anchors, persisted scale settings, and scroll-to-zoom step handling.
 
 `CountdownStore` accepts an injected `DateProvider`, so time-based tests do not need to wait for a real countdown to finish.
 

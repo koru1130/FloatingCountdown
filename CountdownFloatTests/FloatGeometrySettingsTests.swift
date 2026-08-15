@@ -77,4 +77,120 @@ final class FloatGeometrySettingsTests: XCTestCase {
         let restored = FloatScaleSettings(defaults: defaults, persistenceKey: "scale")
         XCTAssertEqual(restored.scale, FloatScaleSettings.minimumScale, accuracy: 0.000_1)
     }
+
+    func testScrollZoomUsesWheelNotchesAndAccumulatesPreciseDeltas() {
+        var accumulator = FloatScrollZoomAccumulator()
+
+        XCTAssertEqual(accumulator.steps(for: 1, hasPreciseDeltas: false), 1)
+        XCTAssertEqual(accumulator.steps(for: -1, hasPreciseDeltas: false), -1)
+
+        XCTAssertEqual(accumulator.steps(for: 10, hasPreciseDeltas: true), 0)
+        XCTAssertEqual(accumulator.steps(for: 13, hasPreciseDeltas: true), 0)
+        XCTAssertEqual(accumulator.steps(for: 2, hasPreciseDeltas: true), 1)
+        XCTAssertEqual(accumulator.steps(for: -48, hasPreciseDeltas: true), -2)
+
+        accumulator.reset()
+        XCTAssertEqual(accumulator.steps(for: 23, hasPreciseDeltas: true), 0)
+    }
+
+    @MainActor
+    func testFloatPanelAndContentBoundsGrowWithScale() {
+        let suiteName = "FloatPanelScaleTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let settings = FloatScaleSettings(defaults: defaults, persistenceKey: "scale")
+        let controller = FloatPanelController(
+            store: CountdownStore(autoStartTimer: false),
+            scaleSettings: settings
+        )
+        controller.refreshLayout()
+        let originalSize = controller.panel.frame.size
+
+        controller.setScale(1.5)
+        RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+
+        XCTAssertEqual(
+            controller.panel.frame.width,
+            originalSize.width * 1.5,
+            accuracy: 1
+        )
+        XCTAssertEqual(
+            controller.panel.frame.height,
+            originalSize.height * 1.5,
+            accuracy: 1
+        )
+        XCTAssertEqual(
+            controller.panel.contentView?.bounds.size,
+            controller.panel.contentLayoutRect.size
+        )
+        XCTAssertEqual(
+            controller.panel.contentView?.frame.size,
+            controller.panel.contentLayoutRect.size
+        )
+        XCTAssertTrue(controller.panel.contentView is FloatPanelContentView)
+
+        guard let hostedContent = controller.panel.contentView?.subviews.first else {
+            return XCTFail("Expected a hosted countdown view")
+        }
+        XCTAssertEqual(hostedContent.frame.size, controller.panel.contentLayoutRect.size)
+        XCTAssertEqual(hostedContent.bounds.size, controller.panel.contentLayoutRect.size)
+    }
+
+    @MainActor
+    func testScaledControlHitRegionsFollowVisualButtons() throws {
+        let suiteName = "FloatControlHitTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        var changeCount = 0
+        var hideCount = 0
+        let settings = FloatScaleSettings(defaults: defaults, persistenceKey: "scale")
+        let controller = FloatPanelController(
+            store: CountdownStore(autoStartTimer: false),
+            scaleSettings: settings,
+            onChange: { changeCount += 1 },
+            onHide: { hideCount += 1 },
+            alwaysShowControls: true
+        )
+        controller.show()
+        defer { controller.panel.orderOut(nil) }
+        controller.setScale(1.5)
+        RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+
+        let scale = settings.scale
+        let size = controller.panel.contentLayoutRect.size
+        try click(
+            point: NSPoint(x: size.width - 36 * scale, y: size.height - 13 * scale),
+            in: controller.panel
+        )
+        try click(
+            point: NSPoint(x: size.width - 13 * scale, y: size.height - 13 * scale),
+            in: controller.panel
+        )
+
+        XCTAssertEqual(changeCount, 1)
+        XCTAssertEqual(hideCount, 1)
+    }
+
+    @MainActor
+    private func click(point: NSPoint, in panel: NSPanel) throws {
+        for type in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
+            let event = try XCTUnwrap(
+                NSEvent.mouseEvent(
+                    with: type,
+                    location: point,
+                    modifierFlags: [],
+                    timestamp: ProcessInfo.processInfo.systemUptime,
+                    windowNumber: panel.windowNumber,
+                    context: nil,
+                    eventNumber: 0,
+                    clickCount: 1,
+                    pressure: type == .leftMouseDown ? 1 : 0
+                )
+            )
+            panel.sendEvent(event)
+        }
+        RunLoop.main.run(until: Date().addingTimeInterval(0.02))
+    }
 }
