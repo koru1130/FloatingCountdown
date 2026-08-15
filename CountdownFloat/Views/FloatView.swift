@@ -19,7 +19,7 @@ struct FloatView: View {
     @ObservedObject var store: CountdownStore
     @Environment(\.floatLayoutScale) private var layoutScale
 
-    /// Opens the setup/reconfigure panel from the `⋯` control.
+    /// Opens the countdown controls menu from the `⋯` control.
     var onChange: (() -> Void)?
     /// Hides the float surface.  The store is deliberately not mutated here;
     /// the countdown and menu-bar extra continue running while hidden.
@@ -228,7 +228,7 @@ struct FloatControlsPill: View {
                 systemImage: "ellipsis",
                 pointSize: 12 * scale,
                 size: CountdownDesign.Metrics.controlButtonSize * scale,
-                accessibilityLabel: "Change countdown"
+                accessibilityLabel: "Show countdown controls"
             ) {
                 onChange?()
             }
