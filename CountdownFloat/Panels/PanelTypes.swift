@@ -16,6 +16,7 @@ enum CountdownPanelKind {
 @MainActor
 final class CountdownPanel: NSPanel {
     let kind: CountdownPanelKind
+    var onScrollWheel: ((NSEvent) -> Void)?
 
     init(
         contentRect: NSRect,
@@ -54,6 +55,14 @@ final class CountdownPanel: NSPanel {
 
     override var canBecomeMain: Bool {
         false
+    }
+
+    override func sendEvent(_ event: NSEvent) {
+        if event.type == .scrollWheel, let onScrollWheel {
+            onScrollWheel(event)
+            return
+        }
+        super.sendEvent(event)
     }
 }
 

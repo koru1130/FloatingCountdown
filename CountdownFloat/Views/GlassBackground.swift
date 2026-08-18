@@ -131,20 +131,23 @@ struct GlassBackground: View {
     }
 
     let kind: Kind
+    let scale: CGFloat
 
-    init(kind: Kind = .float) {
+    init(kind: Kind = .float, scale: CGFloat = 1) {
         self.kind = kind
+        self.scale = scale
     }
 
     var body: some View {
-        let shape = RoundedRectangle(cornerRadius: kind.radius, style: .continuous)
+        let radius = kind == .pill ? kind.radius : kind.radius * scale
+        let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
         let surface = shape
             .fill(kind.fill)
             .background(
                 CountdownVisualEffect(
                     material: kind.material,
                     blendingMode: .behindWindow,
-                    cornerRadius: kind.radius
+                    cornerRadius: radius
                 )
                     .clipShape(shape)
             )

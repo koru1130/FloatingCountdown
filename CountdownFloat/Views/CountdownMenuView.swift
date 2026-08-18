@@ -60,7 +60,7 @@ struct CountdownMenuView: View {
         return store.isPaused ? "Resume" : "Pause"
     }
 
-    private func perform(_ action: @escaping () -> Void) {
+    private func performAndDismiss(_ action: @escaping () -> Void) {
         // Dismiss the menu before performing an action that may open the setup
         // popover.  Closing afterwards would immediately close the new popover.
         onDismiss()
@@ -70,24 +70,24 @@ struct CountdownMenuView: View {
     var body: some View {
         VStack(spacing: 0) {
             MenuRow(title: isFloatHidden ? "Show float" : "Hide float") {
-                perform(isFloatHidden ? onShowFloat : onHideFloat)
+                performAndDismiss(isFloatHidden ? onShowFloat : onHideFloat)
             }
 
             MenuRow(title: "Edit") {
-                perform(onChange)
+                performAndDismiss(onChange)
             }
 
             MenuRow(title: pauseTitle) {
                 if store.isCompleted {
-                    perform(onReset)
+                    performAndDismiss(onReset)
                 } else {
-                    perform { store.togglePause() }
+                    performAndDismiss { store.togglePause() }
                 }
             }
             .disabled(!store.hasCountdown)
 
             MenuRow(title: "Add 5 min") {
-                perform { store.addFiveMinutes() }
+                performAndDismiss { store.addFiveMinutes() }
             }
             .disabled(!store.hasCountdown)
 
@@ -100,7 +100,7 @@ struct CountdownMenuView: View {
                 .padding(.horizontal, 11.2)
 
             MenuRow(title: "Stop", tint: CountdownMenuPalette.neutral400) {
-                perform {
+                performAndDismiss {
                     store.stop()
                     onStop?()
                 }
@@ -108,7 +108,7 @@ struct CountdownMenuView: View {
             .disabled(!store.hasCountdown)
 
             MenuRow(title: "Quit", tint: CountdownMenuPalette.neutral400) {
-                perform(onQuit)
+                performAndDismiss(onQuit)
             }
         }
         .padding(8.4)
@@ -141,10 +141,10 @@ struct CountdownMenuView: View {
                 accessibilityLabel: "Decrease float size",
                 isDisabled: isAtMinimumScale
             ) {
-                perform(onDecreaseFloatSize)
+                onDecreaseFloatSize()
             }
 
-            Button(action: { perform(onResetFloatSize) }) {
+            Button(action: onResetFloatSize) {
                 Text(scalePercentage)
                     .font(.system(size: 12.5, weight: .regular, design: .monospaced))
                     .foregroundStyle(CountdownMenuPalette.text)
@@ -164,7 +164,7 @@ struct CountdownMenuView: View {
                 accessibilityLabel: "Increase float size",
                 isDisabled: isAtMaximumScale
             ) {
-                perform(onIncreaseFloatSize)
+                onIncreaseFloatSize()
             }
         }
         .frame(maxWidth: .infinity, minHeight: 28, alignment: .leading)

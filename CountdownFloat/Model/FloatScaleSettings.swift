@@ -82,3 +82,35 @@ final class FloatScaleSettings: ObservableObject {
         scale = Self.defaultScale
     }
 }
+
+/// Converts wheel and trackpad movement into the same discrete steps used by
+/// the Float size controls. A mouse wheel responds to every notch, while a
+/// precise trackpad gesture accumulates points so small deltas do not resize
+/// the window on every event.
+struct FloatScrollZoomAccumulator {
+    static let preciseStepThreshold: CGFloat = 24
+
+    private var accumulatedPreciseDelta: CGFloat = 0
+
+    mutating func reset() {
+        accumulatedPreciseDelta = 0
+    }
+
+    mutating func steps(for deltaY: CGFloat, hasPreciseDeltas: Bool) -> Int {
+        guard deltaY.isFinite, deltaY != 0 else { return 0 }
+
+        guard hasPreciseDeltas else {
+            reset()
+            return deltaY > 0 ? 1 : -1
+        }
+
+        if accumulatedPreciseDelta != 0,
+           accumulatedPreciseDelta.sign != deltaY.sign {
+            reset()
+        }
+        accumulatedPreciseDelta += deltaY
+        let steps = Int(accumulatedPreciseDelta / Self.preciseStepThreshold)
+        accumulatedPreciseDelta -= CGFloat(steps) * Self.preciseStepThreshold
+        return steps
+    }
+}

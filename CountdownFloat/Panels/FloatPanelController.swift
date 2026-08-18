@@ -2,52 +2,40 @@ import AppKit
 import Combine
 import SwiftUI
 
-/// Mutable presentation inputs for the visible SwiftUI root.
-///
-/// Keeping these values in an observed object lets AppKit resize the panel
-/// without replacing `NSHostingView.rootView`. Replacing the root on every
-/// timer tick recreates SwiftUI's pointer/button identity and makes hover
-/// controls flicker or lose their click target.
-private final class FloatPresentationState: ObservableObject {
-    @Published private(set) var scale: CGFloat
-    @Published private(set) var baseSize: CGSize?
-
-    init(scale: CGFloat, baseSize: CGSize? = nil) {
-        self.scale = scale
-        self.baseSize = baseSize
-    }
-
-    func update(scale: CGFloat, baseSize: CGSize) {
-        if self.scale != scale {
-            self.scale = scale
-        }
-        if self.baseSize != baseSize {
-            self.baseSize = baseSize
-        }
-    }
+/// A stable layout boundary between NSWindow and NSHostingView. Hosting views
+/// can otherwise propagate a changed SwiftUI fitting size back to their window
+/// and undo the frame explicitly calculated by FloatPanelController.
+final class FloatPanelContentView: NSView {
+    override var isOpaque: Bool { false }
 }
 
-/// A small SwiftUI shell that makes the user's scale an actual layout
-/// dimension. `scaleEffect` alone intentionally leaves an
-/// `NSHostingView.fittingSize` unchanged, so an off-screen hosting view
-/// measures the unscaled content and this stable visible root receives the
-/// resulting size through `FloatPresentationState`.
+/// Applies the user scale as a SwiftUI environment value so the timer surface
+/// and its controls both grow through real layout rather than render transforms.
 private struct ScaledFloatRoot: View {
     let content: FloatView
-    @ObservedObject var presentation: FloatPresentationState
+    let onChange: () -> Void
+    let onHide: () -> Void
+    let alwaysShowControls: Bool
+    let scale: CGFloat
+
+    @State private var isHovered = false
 
     var body: some View {
-        if let baseSize = presentation.baseSize {
+        ZStack(alignment: .topTrailing) {
             content
-                .scaleEffect(presentation.scale, anchor: .center)
-                .frame(
-                    width: max(1, baseSize.width * presentation.scale),
-                    height: max(1, baseSize.height * presentation.scale),
-                    alignment: .center
+                .environment(\.floatLayoutScale, scale)
+
+            if alwaysShowControls || isHovered {
+                FloatControlsPill(
+                    scale: scale,
+                    onChange: onChange,
+                    onHide: onHide
                 )
-        } else {
-            content
+                .zIndex(2)
+            }
         }
+        .contentShape(Rectangle())
+        .onHover { isHovered = $0 }
     }
 }
 
@@ -63,9 +51,11 @@ final class FloatPanelController: NSObject, NSWindowDelegate {
     /// resizes this panel immediately.
     let scaleSettings: FloatScaleSettings
 
-    private let presentationState: FloatPresentationState
+    private let rootContent: FloatView
+    private let contentContainer: FloatPanelContentView
     private let hostingView: NSHostingView<ScaledFloatRoot>
     private let measurementHostingView: NSHostingView<FloatView>
+    private let alwaysShowControls: Bool
     private var storeObservation: AnyCancellable?
     private var scaleObservation: AnyCancellable?
     private let onChange: () -> Void
@@ -73,6 +63,8 @@ final class FloatPanelController: NSObject, NSWindowDelegate {
     private var hasRestoredPosition = false
     private var lastBaseContentSize: CGSize?
     private var pendingScaleAnchor: FloatScaleAnchor?
+    private var scrollZoomAccumulator = FloatScrollZoomAccumulator()
+    private var presentedScale: CGFloat
     private var isApplyingLayout = false
     private var isApplyingFrame = false
 
@@ -85,7 +77,8 @@ final class FloatPanelController: NSObject, NSWindowDelegate {
         store: CountdownStore,
         scaleSettings: FloatScaleSettings = FloatScaleSettings(),
         onChange: @escaping () -> Void = {},
-        onHide: @escaping () -> Void = {}
+        onHide: @escaping () -> Void = {},
+        alwaysShowControls: Bool = false
     ) {
         self.store = store
         self.scaleSettings = scaleSettings
@@ -100,46 +93,43 @@ final class FloatPanelController: NSObject, NSWindowDelegate {
         )
         self.panel = panel
 
-        let view = FloatView(
-            store: store,
-            onChange: { [weak panel] in
-                // Keeping the closure in the view independent from the
-                // controller avoids a retain cycle through NSHostingView.
-                _ = panel
-                onChange()
-            },
-            onHide: { [weak panel] in
-                _ = panel
-                onHide()
-            }
-        )
-        let presentationState = FloatPresentationState(scale: scaleSettings.scale)
-        self.presentationState = presentationState
+        let view = FloatView(store: store, showsControls: false)
+        self.rootContent = view
+        self.contentContainer = FloatPanelContentView(frame: initialRect)
+        self.alwaysShowControls = alwaysShowControls
+        self.presentedScale = scaleSettings.scale
         self.hostingView = NSHostingView(
             rootView: ScaledFloatRoot(
                 content: view,
-                presentation: presentationState
+                onChange: onChange,
+                onHide: onHide,
+                alwaysShowControls: alwaysShowControls,
+                scale: scaleSettings.scale
             )
         )
-        // This view is never attached to a window. It may be invalidated and
-        // laid out freely without disturbing the visible root's @State,
-        // pointer tracking, or Button identity.
         self.measurementHostingView = NSHostingView(
-            rootView: FloatView(store: store)
+            rootView: FloatView(store: store, showsControls: false)
         )
-
         super.init()
 
         panel.delegate = self
         // The hosting bounds intentionally include transparent room for the
         // overhanging hover controls. Make that room genuinely transparent
         // instead of inheriting an AppKit backing color.
-        hostingView.wantsLayer = true
-        hostingView.layer?.backgroundColor = NSColor.clear.cgColor
-        panel.contentView = hostingView
+        contentContainer.wantsLayer = true
+        contentContainer.layer?.backgroundColor = NSColor.clear.cgColor
+        contentContainer.layer?.masksToBounds = true
+        hostingView.frame = contentContainer.bounds
+        hostingView.autoresizingMask = [.width, .height]
+        hostingView.sizingOptions = []
+        contentContainer.addSubview(hostingView)
+        panel.contentView = contentContainer
         panel.isMovableByWindowBackground = true
         panel.acceptsMouseMovedEvents = true
         panel.setAccessibilityTitle("Countdown")
+        panel.onScrollWheel = { [weak self] event in
+            self?.handleScrollWheel(event)
+        }
 
         // SwiftUI state changes can alter Bar/Ring intrinsic dimensions (and
         // urgent/completed overlays can change the requested size). Refit on
@@ -210,25 +200,72 @@ final class FloatPanelController: NSObject, NSWindowDelegate {
     /// Set the user scale and choose which edge remains stable while the
     /// panel resizes. Direct writes to `scaleSettings.scale` use `.center`.
     func setScale(_ value: CGFloat, anchor: FloatScaleAnchor = .center) {
-        pendingScaleAnchor = anchor
-        scaleSettings.setScale(value)
+        applyScaleChange(anchor: anchor) {
+            scaleSettings.setScale(value)
+        }
     }
 
     @discardableResult
     func increaseScale(anchor: FloatScaleAnchor = .center) -> CGFloat {
-        pendingScaleAnchor = anchor
-        return scaleSettings.increase()
+        applyScaleChange(anchor: anchor) {
+            scaleSettings.increase()
+        }
     }
 
     @discardableResult
     func decreaseScale(anchor: FloatScaleAnchor = .center) -> CGFloat {
-        pendingScaleAnchor = anchor
-        return scaleSettings.decrease()
+        applyScaleChange(anchor: anchor) {
+            scaleSettings.decrease()
+        }
     }
 
     func resetScale(anchor: FloatScaleAnchor = .center) {
+        applyScaleChange(anchor: anchor) {
+            scaleSettings.reset()
+            return scaleSettings.scale
+        }
+    }
+
+    @discardableResult
+    private func applyScaleChange(
+        anchor: FloatScaleAnchor,
+        _ update: () -> CGFloat
+    ) -> CGFloat {
         pendingScaleAnchor = anchor
-        scaleSettings.reset()
+        let acceptedScale = update()
+        scaleDidChange(acceptedScale)
+        return acceptedScale
+    }
+
+    private func handleScrollWheel(_ event: NSEvent) {
+        // Inertial trackpad events can keep arriving after the pointer gesture
+        // ends. Ignore that momentum so one deliberate swipe maps to one
+        // bounded sequence of zoom steps.
+        guard event.momentumPhase.isEmpty else {
+            if event.momentumPhase.contains(.ended)
+                || event.momentumPhase.contains(.cancelled) {
+                scrollZoomAccumulator.reset()
+            }
+            return
+        }
+
+        if event.phase.contains(.began) {
+            scrollZoomAccumulator.reset()
+        }
+
+        let steps = scrollZoomAccumulator.steps(
+            for: event.scrollingDeltaY,
+            hasPreciseDeltas: event.hasPreciseScrollingDeltas
+        )
+        if steps != 0 {
+            applyScaleChange(anchor: .center) {
+                scaleSettings.adjust(by: steps)
+            }
+        }
+
+        if event.phase.contains(.ended) || event.phase.contains(.cancelled) {
+            scrollZoomAccumulator.reset()
+        }
     }
 
     // MARK: - Layout
@@ -237,14 +274,21 @@ final class FloatPanelController: NSObject, NSWindowDelegate {
         let anchor = pendingScaleAnchor ?? .center
         pendingScaleAnchor = nil
         layoutContentSynchronously(anchor: anchor, clamp: hasRestoredPosition)
-        if hasRestoredPosition {
-            persistPosition()
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            self.layoutContentSynchronously(
+                anchor: anchor,
+                clamp: self.hasRestoredPosition
+            )
+            if self.hasRestoredPosition {
+                self.persistPosition()
+            }
         }
     }
 
-    /// Measure the unscaled SwiftUI root, then update both the transformed
-    /// root frame and the AppKit panel size. This is deliberately synchronous;
-    /// the caller controls any optional follow-up pass.
+    /// Measure the actual scaled SwiftUI layout, then apply that exact size to
+    /// the AppKit panel. This is deliberately synchronous; the caller controls
+    /// any optional follow-up pass.
     private func layoutContentSynchronously(
         anchor: FloatScaleAnchor? = nil,
         clamp: Bool
@@ -255,31 +299,20 @@ final class FloatPanelController: NSObject, NSWindowDelegate {
 
         let oldFrame = panel.frame
 
-        // Measure with a separate, unscaled host. The visible hosting view's
-        // root is deliberately never reassigned after initialization.
+        updateRootForScaleIfNeeded()
+        hostingView.invalidateIntrinsicContentSize()
+        hostingView.layoutSubtreeIfNeeded()
+
         measurementHostingView.invalidateIntrinsicContentSize()
         measurementHostingView.layoutSubtreeIfNeeded()
-
-        let fitting = measurementHostingView.fittingSize
-        let measuredBase = validContentSize(fitting) ?? lastBaseContentSize
+        let measuredBase = validContentSize(measurementHostingView.fittingSize)
+            ?? lastBaseContentSize
         guard let measuredBase,
               let scaledSize = FloatPanelGeometry.scaledSize(
                 measuredBase,
                 by: scaleSettings.scale
-              ) else {
-            return
-        }
+              ) else { return }
         lastBaseContentSize = measuredBase
-
-        // Update presentation values in place. Besides making the visual size
-        // deterministic, this keeps transparent hit area and panel bounds in
-        // sync with the user's zoom without replacing the interactive root.
-        presentationState.update(
-            scale: scaleSettings.scale,
-            baseSize: measuredBase
-        )
-        hostingView.invalidateIntrinsicContentSize()
-        hostingView.layoutSubtreeIfNeeded()
 
         var newFrame = oldFrame
         newFrame.size = scaledSize
@@ -294,6 +327,27 @@ final class FloatPanelController: NSObject, NSWindowDelegate {
             )
         }
         applyFrame(newFrame)
+
+        // HostingView and its independent container use the final physical
+        // size. Only the noninteractive timer surface is transformed; the
+        // controls above are laid out directly at this scaled size.
+        hostingView.frame = contentContainer.bounds
+        hostingView.setBoundsSize(contentContainer.bounds.size)
+        hostingView.needsLayout = true
+        hostingView.layoutSubtreeIfNeeded()
+    }
+
+    private func updateRootForScaleIfNeeded() {
+        let scale = scaleSettings.scale
+        guard scale != presentedScale else { return }
+        presentedScale = scale
+        hostingView.rootView = ScaledFloatRoot(
+            content: rootContent,
+            onChange: onChange,
+            onHide: onHide,
+            alwaysShowControls: alwaysShowControls,
+            scale: scale
+        )
     }
 
     private func validContentSize(_ size: CGSize) -> CGSize? {
