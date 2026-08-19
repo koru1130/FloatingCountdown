@@ -24,7 +24,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
 
         floatController = FloatPanelController(
             store: store,
-            onChange: { [weak self] in self?.showStatusPopover() },
+            onChange: { [weak self] in self?.showSetup() },
             onHide: { [weak self] in self?.hideFloat() }
         )
         completionController = CompletionPanelController(
