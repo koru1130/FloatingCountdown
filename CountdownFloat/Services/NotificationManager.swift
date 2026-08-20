@@ -14,8 +14,8 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
 
     private let center: UNUserNotificationCenter
 
-    var onAddFive: (() -> Void)?
-    var onEnd: (() -> Void)?
+    var onAddFive: ((UUID) -> Void)?
+    var onEnd: ((UUID) -> Void)?
 
     init(center: UNUserNotificationCenter = .current()) {
         self.center = center
@@ -35,7 +35,8 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         content.body = "The float keeps counting up until you end or extend it."
         content.sound = .default
         content.categoryIdentifier = Self.categoryIdentifier
-        content.threadIdentifier = "countdown"
+        content.threadIdentifier = event.countdownID.uuidString
+        content.userInfo = ["countdownID": event.countdownID.uuidString]
 
         let request = UNNotificationRequest(
             identifier: event.id.uuidString,
@@ -66,11 +67,13 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         didReceive response: UNNotificationResponse,
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
-        switch response.actionIdentifier {
-        case Self.addFiveActionIdentifier:
-            onAddFive?()
-        case Self.endActionIdentifier:
-            onEnd?()
+        let countdownID = (response.notification.request.content.userInfo["countdownID"] as? String)
+            .flatMap(UUID.init(uuidString:))
+        switch (response.actionIdentifier, countdownID) {
+        case (Self.addFiveActionIdentifier, let id?):
+            onAddFive?(id)
+        case (Self.endActionIdentifier, let id?):
+            onEnd?(id)
         default:
             break
         }

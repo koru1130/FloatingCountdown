@@ -27,6 +27,7 @@ public typealias CountdownState = CountdownStatus
 public enum CountdownInputMode: String, CaseIterable, Codable, Equatable, Sendable {
     case duration
     case atTime
+    case countUp
 
     /// Compatibility spelling used by the cleaned HTML reference.
     public static var clock: CountdownInputMode { .atTime }
@@ -47,11 +48,18 @@ public enum CountdownTransition: Equatable, Sendable {
 /// Information delivered once when a running countdown crosses zero.
 public struct CountdownCompletionEvent: Identifiable, Equatable, Sendable {
     public let id: UUID
+    public let countdownID: UUID
     public let label: String
     public let endedAt: Date
 
-    public init(id: UUID = UUID(), label: String, endedAt: Date) {
+    public init(
+        id: UUID = UUID(),
+        countdownID: UUID = UUID(),
+        label: String,
+        endedAt: Date
+    ) {
         self.id = id
+        self.countdownID = countdownID
         self.label = label
         self.endedAt = endedAt
     }
@@ -67,14 +75,20 @@ public struct CountdownCompletionEvent: Identifiable, Equatable, Sendable {
 public final class CountdownStore: ObservableObject {
     public typealias DateProvider = () -> Date
 
+    /// Stable identity used by the multi-countdown coordinator, menu and
+    /// notification actions. Timing state remains fully local to this store.
+    public let id: UUID
+
     // MARK: Published lifecycle state
 
     @Published public private(set) var status: CountdownStatus = .idle
     @Published public private(set) var now: Date
     @Published public private(set) var endAt: Date?
+    @Published public private(set) var startedAt: Date?
     @Published public private(set) var totalMilliseconds: Int64 = 0
     @Published public private(set) var frozenMilliseconds: Int64 = 0
     @Published public private(set) var remainingMilliseconds: Int64 = 0
+    @Published public private(set) var elapsedMilliseconds: Int64 = 0
     @Published public private(set) var progressFraction: Double = 0
     @Published public private(set) var displayText: String = "00:00"
     @Published public private(set) var captionText: String = "Set countdown"
@@ -117,10 +131,12 @@ public final class CountdownStore: ObservableObject {
     // MARK: Init / teardown
 
     public init(
+        id: UUID = UUID(),
         clock: @escaping DateProvider = { Date() },
         calendar: Calendar = .autoupdatingCurrent,
         autoStartTimer: Bool = true
     ) {
+        self.id = id
         self.clock = clock
         self.calendar = calendar
         self.autoStartTimer = autoStartTimer
@@ -190,6 +206,7 @@ public final class CountdownStore: ObservableObject {
     public var isPaused: Bool { status == .paused }
     public var isCompleted: Bool { status == .done }
     public var isDone: Bool { status == .done }
+    public var isCountUp: Bool { inputMode == .countUp && status != .idle }
     public var displayStyle: CountdownDisplayMode {
         get { displayMode }
         set { displayMode = newValue }
@@ -215,12 +232,16 @@ public final class CountdownStore: ObservableObject {
         let date = explicitDate ?? clock()
         now = date
 
-        if status == .running, let endAt, date >= endAt {
+        if !isCountUp, status == .running, let endAt, date >= endAt {
             remainingMilliseconds = Int64((endAt.timeIntervalSince(date) * 1000).rounded(.towardZero))
             status = .done
             isUrgent = false
             recomputeDerivedState()
-            let event = CountdownCompletionEvent(label: label, endedAt: date)
+            let event = CountdownCompletionEvent(
+                countdownID: id,
+                label: label,
+                endedAt: date
+            )
             completionEvent = event
             emit(.completed)
             onCompletion?(event)
@@ -234,6 +255,28 @@ public final class CountdownStore: ObservableObject {
     public func refresh() { tick() }
 
     private func recomputeDerivedState() {
+        if isCountUp {
+            switch status {
+            case .idle:
+                elapsedMilliseconds = 0
+            case .paused:
+                elapsedMilliseconds = max(0, frozenMilliseconds)
+            case .running:
+                elapsedMilliseconds = max(
+                    0,
+                    Int64((now.timeIntervalSince(startedAt ?? now) * 1000).rounded(.towardZero))
+                )
+            case .done:
+                elapsedMilliseconds = max(0, elapsedMilliseconds)
+            }
+            remainingMilliseconds = 0
+            displayText = Self.formatElapsed(milliseconds: elapsedMilliseconds)
+            progressFraction = status == .idle ? 0 : 1
+            isUrgent = false
+            captionText = caption(for: status, endAt: nil)
+            return
+        }
+
         let remaining: Int64
         switch status {
         case .idle:
@@ -249,6 +292,7 @@ public final class CountdownStore: ObservableObject {
         }
 
         remainingMilliseconds = remaining
+        elapsedMilliseconds = 0
         displayText = Self.format(milliseconds: remaining)
         progressFraction = totalMilliseconds > 0
             ? min(1, max(0, Double(remaining) / Double(totalMilliseconds)))
@@ -267,6 +311,10 @@ public final class CountdownStore: ObservableObject {
         case .done:
             return "over time"
         case .running:
+            if isCountUp {
+                let cleanLabel = label.trimmingCharacters(in: .whitespacesAndNewlines)
+                return cleanLabel.isEmpty ? "counting up" : cleanLabel
+            }
             let clock = endAt.map { Self.clockString($0, calendar: calendar) } ?? "--:--"
             let cleanLabel = label.trimmingCharacters(in: .whitespacesAndNewlines)
             return cleanLabel.isEmpty ? "ends \(clock)" : "\(cleanLabel) · \(clock)"
@@ -279,6 +327,10 @@ public final class CountdownStore: ObservableObject {
     /// documented input ranges so a programmatic caller cannot create a broken
     /// countdown (the setup view performs friendlier validation before calling).
     public func startFromDraft() {
+        startFromDraft(transition: .started)
+    }
+
+    private func startFromDraft(transition: CountdownTransition) {
         let startedAt = clock()
         let target: Date
         switch inputMode {
@@ -288,6 +340,9 @@ public final class CountdownStore: ObservableObject {
         case .atTime:
             target = targetDate(from: draftTargetTimeString, relativeTo: startedAt)
                 ?? startedAt.addingTimeInterval(60)
+        case .countUp:
+            startCountUp(at: startedAt, transition: transition)
+            return
         }
 
         var span = max(1, Int64((target.timeIntervalSince(startedAt) * 1000).rounded()))
@@ -300,7 +355,7 @@ public final class CountdownStore: ObservableObject {
             span = max(60_000, Int64((target.timeIntervalSince(start) * 1000).rounded()))
         }
 
-        start(endAt: target, totalMilliseconds: span, transition: .started)
+        start(endAt: target, totalMilliseconds: span, transition: transition)
     }
 
     /// Starts a duration in minutes, optionally overriding the progress span.
@@ -320,6 +375,7 @@ public final class CountdownStore: ObservableObject {
         // countdown (the progress then clamps at 100% until the final span).
         let spanMilliseconds = max(1_000, Int64(((span ?? duration) * 1000).rounded()))
         if let label { self.label = label }
+        inputMode = .duration
         start(endAt: now.addingTimeInterval(TimeInterval(durationMilliseconds) / 1000),
               totalMilliseconds: spanMilliseconds,
               transition: .started)
@@ -331,6 +387,7 @@ public final class CountdownStore: ObservableObject {
         let durationMilliseconds = max(1_000, Int64((targetDate.timeIntervalSince(now) * 1000).rounded()))
         let spanMilliseconds = max(1_000, Int64(((span ?? TimeInterval(durationMilliseconds) / 1000) * 1000).rounded()))
         if let label { self.label = label }
+        inputMode = .atTime
         start(endAt: targetDate, totalMilliseconds: spanMilliseconds, transition: .started)
     }
 
@@ -339,12 +396,35 @@ public final class CountdownStore: ObservableObject {
         start(at: targetDate, span: span, label: label)
     }
 
+    /// Starts an open-ended stopwatch that counts upward from zero.
+    public func startCountUp(label: String? = nil) {
+        if let label { self.label = label }
+        inputMode = .countUp
+        startCountUp(at: clock(), transition: .started)
+    }
+
+    private func startCountUp(at date: Date, transition: CountdownTransition) {
+        status = .running
+        displayMode = .bar
+        startedAt = date
+        endAt = nil
+        totalMilliseconds = 0
+        frozenMilliseconds = 0
+        remainingMilliseconds = 0
+        elapsedMilliseconds = 0
+        completionEvent = nil
+        floatHidden = false
+        tick(at: date)
+        emit(transition)
+    }
+
     private func start(
         endAt target: Date,
         totalMilliseconds span: Int64,
         transition: CountdownTransition
     ) {
         status = .running
+        startedAt = clock()
         endAt = target
         totalMilliseconds = max(1, span)
         frozenMilliseconds = 0
@@ -363,8 +443,13 @@ public final class CountdownStore: ObservableObject {
     public func pause() {
         guard status == .running else { return }
         tick()
-        guard status == .running, let endAt else { return }
-        frozenMilliseconds = max(0, Int64((endAt.timeIntervalSince(now) * 1000).rounded(.towardZero)))
+        guard status == .running else { return }
+        if isCountUp {
+            frozenMilliseconds = elapsedMilliseconds
+        } else {
+            guard let endAt else { return }
+            frozenMilliseconds = max(0, Int64((endAt.timeIntervalSince(now) * 1000).rounded(.towardZero)))
+        }
         status = .paused
         recomputeDerivedState()
         emit(.paused)
@@ -374,7 +459,12 @@ public final class CountdownStore: ObservableObject {
         guard status == .paused else { return }
         let date = clock()
         now = date
-        endAt = date.addingTimeInterval(TimeInterval(frozenMilliseconds) / 1000)
+        if isCountUp {
+            startedAt = date.addingTimeInterval(-TimeInterval(frozenMilliseconds) / 1000)
+            endAt = nil
+        } else {
+            endAt = date.addingTimeInterval(TimeInterval(frozenMilliseconds) / 1000)
+        }
         status = .running
         completionEvent = nil
         tick(at: date)
@@ -390,7 +480,7 @@ public final class CountdownStore: ObservableObject {
     /// Adds five minutes. For a completed countdown this resumes counting up
     /// from the current time, matching the completion toast's action.
     public func addFiveMinutes() {
-        guard status != .idle else { return }
+        guard status != .idle, !isCountUp else { return }
         let extensionMilliseconds: Int64 = 300_000
         let date = clock()
         now = date
@@ -433,16 +523,26 @@ public final class CountdownStore: ObservableObject {
     }
 
     public func reset() {
-        guard status != .idle || endAt != nil else { return }
-        clearCountdown(transition: .reset)
+        guard status != .idle else { return }
+        startFromDraft(transition: .reset)
+    }
+
+    /// Applies metadata and presentation changes without changing the current
+    /// elapsed/remaining time or emitting a lifecycle transition.
+    public func updatePresentation(label: String, displayMode: CountdownDisplayMode) {
+        self.label = label
+        self.displayMode = isCountUp ? .bar : displayMode
+        recomputeDerivedState()
     }
 
     private func clearCountdown(transition: CountdownTransition) {
         status = .idle
+        startedAt = nil
         endAt = nil
         totalMilliseconds = 0
         frozenMilliseconds = 0
         remainingMilliseconds = 0
+        elapsedMilliseconds = 0
         progressFraction = 0
         displayText = "00:00"
         captionText = "Set countdown"
@@ -482,6 +582,19 @@ public final class CountdownStore: ObservableObject {
             body = String(format: "%02llu:%02llu", minutes, remainder)
         }
         return negative ? "+" + body : body
+    }
+
+    /// Stopwatch formatting floors partial seconds so a newly started count-up
+    /// remains at `00:00` until one full second has elapsed.
+    public static func formatElapsed(milliseconds: Int64) -> String {
+        let seconds = UInt64(max(0, milliseconds)) / 1_000
+        let hours = seconds / 3_600
+        let minutes = (seconds % 3_600) / 60
+        let remainder = seconds % 60
+        if hours > 0 {
+            return "\(hours):" + String(format: "%02llu:%02llu", minutes, remainder)
+        }
+        return String(format: "%02llu:%02llu", minutes, remainder)
     }
 
     public func format(_ milliseconds: Int64) -> String {

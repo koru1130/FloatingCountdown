@@ -67,15 +67,17 @@ final class FloatPanelController: NSObject, NSWindowDelegate {
     private var presentedScale: CGFloat
     private var isApplyingLayout = false
     private var isApplyingFrame = false
+    private let positionKeyPrefix: String
+    private let initialPlacementOffset: CGFloat
 
-    private enum DefaultsKey {
-        static let originX = "floatPanel.originX"
-        static let originY = "floatPanel.originY"
-    }
+    private var originXKey: String { "\(positionKeyPrefix).originX" }
+    private var originYKey: String { "\(positionKeyPrefix).originY" }
 
     init(
         store: CountdownStore,
         scaleSettings: FloatScaleSettings = FloatScaleSettings(),
+        positionKeyPrefix: String = "floatPanel",
+        initialPlacementOffset: CGFloat = 0,
         onChange: @escaping () -> Void = {},
         onHide: @escaping () -> Void = {},
         alwaysShowControls: Bool = false
@@ -84,6 +86,8 @@ final class FloatPanelController: NSObject, NSWindowDelegate {
         self.scaleSettings = scaleSettings
         self.onChange = onChange
         self.onHide = onHide
+        self.positionKeyPrefix = positionKeyPrefix
+        self.initialPlacementOffset = max(0, initialPlacementOffset)
 
         let initialRect = NSRect(x: 0, y: 0, width: 116, height: 84)
         let panel = CountdownPanel(
@@ -169,8 +173,13 @@ final class FloatPanelController: NSObject, NSWindowDelegate {
     func hide() {
         // Do not pause/cancel the store here. The menu-bar status and
         // completion notification must continue while the float is hidden.
-        clampToVisibleFrame()
-        persistPosition()
+        // A newly-created, not-yet-started session has never been placed. Do
+        // not let cancelling that editor overwrite a previously saved origin
+        // with the panel's temporary construction frame.
+        if hasRestoredPosition {
+            clampToVisibleFrame()
+            persistPosition()
+        }
         panel.orderOut(nil)
     }
 
@@ -389,18 +398,21 @@ final class FloatPanelController: NSObject, NSWindowDelegate {
                 in: visibleFrame,
                 margin: FloatPanelGeometry.defaultMargin
             )
-            applyFrame(frame)
+            var cascadedFrame = frame
+            cascadedFrame.origin.x -= initialPlacementOffset
+            cascadedFrame.origin.y -= initialPlacementOffset
+            applyFrame(cascadedFrame)
         }
         clampToVisibleFrame()
     }
 
     private func persistedOrigin(in defaults: UserDefaults) -> NSPoint? {
-        guard defaults.object(forKey: DefaultsKey.originX) != nil,
-              defaults.object(forKey: DefaultsKey.originY) != nil else {
+        guard defaults.object(forKey: originXKey) != nil,
+              defaults.object(forKey: originYKey) != nil else {
             return nil
         }
-        let x = defaults.double(forKey: DefaultsKey.originX)
-        let y = defaults.double(forKey: DefaultsKey.originY)
+        let x = defaults.double(forKey: originXKey)
+        let y = defaults.double(forKey: originYKey)
         guard x.isFinite, y.isFinite else { return nil }
         return NSPoint(x: x, y: y)
     }
@@ -408,8 +420,8 @@ final class FloatPanelController: NSObject, NSWindowDelegate {
     private func persistPosition() {
         let origin = panel.frame.origin
         guard origin.x.isFinite, origin.y.isFinite else { return }
-        UserDefaults.standard.set(origin.x, forKey: DefaultsKey.originX)
-        UserDefaults.standard.set(origin.y, forKey: DefaultsKey.originY)
+        UserDefaults.standard.set(origin.x, forKey: originXKey)
+        UserDefaults.standard.set(origin.y, forKey: originYKey)
     }
 
     private func targetVisibleFrame() -> NSRect? {

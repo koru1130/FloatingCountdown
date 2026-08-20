@@ -87,6 +87,91 @@ final class CountdownStoreTests: XCTestCase {
         XCTAssertEqual(store.progressFraction, 5.0 / 60.0, accuracy: 0.000_001)
     }
 
+    func testCountUpStartsAtZeroAndNeverCompletes() {
+        let clock = TestClock(date())
+        let store = makeStore(at: clock.date, clock)
+        var completions = [CountdownCompletionEvent]()
+        store.onCompletion = { completions.append($0) }
+        store.inputMode = .countUp
+        store.displayMode = .ring
+        store.label = "Workout"
+
+        store.startFromDraft()
+
+        XCTAssertTrue(store.isCountUp)
+        XCTAssertEqual(store.displayMode, .bar)
+        XCTAssertEqual(store.status, .running)
+        XCTAssertNil(store.endAt)
+        XCTAssertEqual(store.displayText, "00:00")
+        XCTAssertEqual(store.captionText, "Workout")
+        XCTAssertEqual(store.progressFraction, 1)
+
+        clock.advance(seconds: 61.9)
+        store.tick()
+
+        XCTAssertTrue((61_899...61_900).contains(store.elapsedMilliseconds))
+        XCTAssertEqual(store.remainingMilliseconds, 0)
+        XCTAssertEqual(store.displayText, "01:01")
+        XCTAssertEqual(store.status, .running)
+        XCTAssertTrue(completions.isEmpty)
+        XCTAssertNil(store.completionEvent)
+    }
+
+    func testCountUpPauseFreezesAndResumeContinuesElapsedTime() {
+        let clock = TestClock(date())
+        let store = makeStore(at: clock.date, clock)
+        store.startCountUp()
+
+        clock.advance(seconds: 12)
+        store.pause()
+        XCTAssertEqual(store.status, .paused)
+        XCTAssertEqual(store.elapsedMilliseconds, 12_000)
+        XCTAssertEqual(store.displayText, "00:12")
+
+        clock.advance(seconds: 30)
+        store.tick()
+        XCTAssertEqual(store.elapsedMilliseconds, 12_000)
+
+        store.resume()
+        clock.advance(seconds: 3)
+        store.tick()
+        XCTAssertEqual(store.status, .running)
+        XCTAssertEqual(store.elapsedMilliseconds, 15_000)
+        XCTAssertEqual(store.displayText, "00:15")
+    }
+
+    func testAddFiveMinutesDoesNotChangeCountUp() {
+        let clock = TestClock(date())
+        let store = makeStore(at: clock.date, clock)
+        store.startCountUp()
+        clock.advance(seconds: 10)
+        store.tick()
+
+        store.addFiveMinutes()
+
+        XCTAssertTrue(store.isCountUp)
+        XCTAssertNil(store.endAt)
+        XCTAssertEqual(store.elapsedMilliseconds, 10_000)
+        XCTAssertEqual(store.lastTransition, .started)
+    }
+
+    func testStartingDurationAfterCountUpSwitchesBackToCountdown() {
+        let clock = TestClock(date())
+        let store = makeStore(at: clock.date, clock)
+        store.startCountUp()
+        clock.advance(seconds: 10)
+        store.tick()
+
+        store.start(duration: 60)
+
+        XCTAssertFalse(store.isCountUp)
+        XCTAssertEqual(store.inputMode, .duration)
+        XCTAssertNotNil(store.endAt)
+        XCTAssertEqual(store.remainingMilliseconds, 60_000)
+        XCTAssertEqual(store.elapsedMilliseconds, 0)
+        XCTAssertEqual(store.displayText, "01:00")
+    }
+
     func testPastTargetCountsAsTomorrow() {
         let clock = TestClock(date(hour: 23, minute: 30))
         let store = makeStore(at: clock.date, clock)
@@ -136,6 +221,58 @@ final class CountdownStoreTests: XCTestCase {
         store.resume()
         XCTAssertEqual(store.status, .running)
         XCTAssertEqual(store.endAt, resumedAt.addingTimeInterval(450))
+    }
+
+    func testPresentationEditKeepsRunningCountdownTime() {
+        let clock = TestClock(date())
+        let store = makeStore(at: clock.date, clock)
+        store.start(minutes: 10, label: "Old")
+        clock.advance(seconds: 90)
+        store.tick()
+        let endAt = store.endAt
+        let remaining = store.remainingMilliseconds
+        let transitionID = store.transitionID
+
+        store.updatePresentation(label: "New", displayMode: .ring)
+
+        XCTAssertEqual(store.status, .running)
+        XCTAssertEqual(store.endAt, endAt)
+        XCTAssertEqual(store.remainingMilliseconds, remaining)
+        XCTAssertEqual(store.transitionID, transitionID)
+        XCTAssertEqual(store.label, "New")
+        XCTAssertEqual(store.displayMode, .ring)
+        XCTAssertEqual(store.captionText, "New · 10:10")
+    }
+
+    func testResetRestartsCountdownFromSavedDraft() {
+        let clock = TestClock(date())
+        let store = makeStore(at: clock.date, clock)
+        store.start(minutes: 5)
+        clock.advance(seconds: 120)
+        store.tick()
+
+        store.reset()
+
+        XCTAssertEqual(store.status, .running)
+        XCTAssertEqual(store.remainingMilliseconds, 300_000)
+        XCTAssertEqual(store.displayText, "05:00")
+        XCTAssertEqual(store.lastTransition, .reset)
+    }
+
+    func testResetRestartsCountUpAtZero() {
+        let clock = TestClock(date())
+        let store = makeStore(at: clock.date, clock)
+        store.startCountUp(label: "Lap")
+        clock.advance(seconds: 42)
+        store.tick()
+
+        store.reset()
+
+        XCTAssertTrue(store.isCountUp)
+        XCTAssertEqual(store.status, .running)
+        XCTAssertEqual(store.elapsedMilliseconds, 0)
+        XCTAssertEqual(store.displayText, "00:00")
+        XCTAssertEqual(store.lastTransition, .reset)
     }
 
     func testAddFiveMinutesExtendsPausedAndRunningCountdowns() {

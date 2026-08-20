@@ -9,6 +9,8 @@ import SwiftUI
 struct SetupView: View {
     @ObservedObject private var store: CountdownStore
 
+    @State private var inputMode: CountdownInputMode
+    @State private var displayMode: CountdownDisplayMode
     @State private var minutesText: String
     @State private var spanText: String
     @State private var targetTimeText: String
@@ -16,33 +18,56 @@ struct SetupView: View {
     @State private var labelText: String
     @FocusState private var focusedField: InputField?
 
+    private let isEditing: Bool
+    private let onCancel: () -> Void
+    private let onStart: () -> Void
+
     private enum InputField: Hashable {
         case minutes, span, target, start, label
     }
 
-    init(store: CountdownStore) {
+    init(
+        store: CountdownStore,
+        isEditing: Bool = false,
+        onCancel: @escaping () -> Void = {},
+        onStart: @escaping () -> Void = {}
+    ) {
         _store = ObservedObject(wrappedValue: store)
+        _inputMode = State(initialValue: store.inputMode)
+        _displayMode = State(initialValue: store.displayMode)
         _minutesText = State(initialValue: store.draftMinutes > 0 ? String(store.draftMinutes) : "")
         _spanText = State(initialValue: store.draftSpanMinutes.map(String.init) ?? "")
         _targetTimeText = State(initialValue: store.draftTargetTimeString)
         _startTimeText = State(initialValue: store.draftStartTimeString)
         _labelText = State(initialValue: store.label)
+        self.isEditing = isEditing
+        self.onCancel = onCancel
+        self.onStart = onStart
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            header
-            modeSwitch
-
-            if store.inputMode == .duration {
-                durationFields
+            if isEditing {
+                header
+                editingControls
             } else {
-                atATimeFields
-            }
+                header
+                modeSwitch
 
-            labelField
-            floatStyle
-            footer
+                if inputMode == .duration {
+                    durationFields
+                } else if inputMode == .atTime {
+                    atATimeFields
+                } else {
+                    countUpInfo
+                }
+
+                labelField
+                if inputMode != .countUp {
+                    floatStyle
+                }
+                footer
+            }
         }
         .padding(16.8)
         .frame(width: 312)
@@ -52,40 +77,118 @@ struct SetupView: View {
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .environment(\.colorScheme, .dark)
         .onAppear(perform: syncDraftStrings)
-        .onChange(of: store.inputMode) { _ in
-            // Keep the visible buffer in step with a mode change made by the
-            // menu-bar menu or another setup view.
-            syncDraftStrings()
-        }
     }
 
     // MARK: - Sections
 
     private var header: some View {
-        Text("Set countdown")
-            .font(.system(size: 16, weight: .medium, design: .rounded))
-            .tracking(-0.24)
-            .foregroundColor(Self.text)
-            .frame(maxWidth: .infinity, alignment: .leading)
-        .frame(height: 19)
+        HStack(spacing: 8) {
+            Text(isEditing ? "Edit countdown" : "New countdown")
+                .font(.system(size: 16, weight: .medium, design: .rounded))
+                .tracking(-0.24)
+                .foregroundColor(Self.text)
+
+            Spacer(minLength: 0)
+
+            if isEditing {
+                Button(action: onCancel) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(Self.neutral400)
+                        .frame(width: 24, height: 24)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Close edit panel")
+                .help("Close edit panel")
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(height: isEditing ? 24 : 19)
         .padding(.bottom, 11.2)
     }
 
     private var modeSwitch: some View {
         HStack(spacing: 3) {
-            modeButton("At a time", isSelected: store.inputMode == .atTime) {
-                store.inputMode = .atTime
+            modeButton("At a time", isSelected: inputMode == .atTime) {
+                inputMode = .atTime
                 focusedField = .target
             }
-            modeButton("Duration", isSelected: store.inputMode == .duration) {
-                store.inputMode = .duration
+            modeButton("Duration", isSelected: inputMode == .duration) {
+                inputMode = .duration
                 focusedField = .minutes
+            }
+            modeButton("Count up", isSelected: inputMode == .countUp) {
+                inputMode = .countUp
+                displayMode = .bar
+                focusedField = .label
             }
         }
         .padding(3)
         .background(Color.black.opacity(0.23))
         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
         .padding(.bottom, 16.8)
+    }
+
+    private var editingControls: some View {
+        VStack(alignment: .leading, spacing: 11) {
+            VStack(alignment: .leading, spacing: 5.6) {
+                Text("LABEL")
+                    .font(.system(size: 11, weight: .regular))
+                    .tracking(0.88)
+                    .foregroundStyle(Self.text55)
+
+                textInput(
+                    text: $labelText,
+                    field: .label,
+                    placeholder: "Label (optional)",
+                    onChange: updateLabel
+                )
+            }
+
+            HStack(spacing: 8) {
+                editorActionButton(
+                    pauseActionTitle,
+                    systemImage: pauseActionSymbol
+                ) {
+                    store.togglePause()
+                }
+                .disabled(store.isCompleted)
+                .opacity(store.isCompleted ? 0.45 : 1)
+
+                editorActionButton("Add 5 min", systemImage: "plus") {
+                    store.addFiveMinutes()
+                }
+                .disabled(store.isCountUp)
+                .opacity(store.isCountUp ? 0.45 : 1)
+            }
+        }
+    }
+
+    private var pauseActionTitle: String {
+        return store.isPaused ? "Resume" : "Pause"
+    }
+
+    private var pauseActionSymbol: String {
+        return store.isPaused ? "play.fill" : "pause.fill"
+    }
+
+    private func editorActionButton(
+        _ title: String,
+        systemImage: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Label(title, systemImage: systemImage)
+                .font(.system(size: 11.5, weight: .medium))
+                .foregroundStyle(Self.accent200)
+                .padding(.horizontal, 8)
+                .frame(maxWidth: .infinity)
+                .frame(height: 28)
+                .background(Self.accent.opacity(0.16), in: RoundedRectangle(cornerRadius: 6))
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 
     private var durationFields: some View {
@@ -95,7 +198,6 @@ struct SetupView: View {
                     ForEach([5, 15, 25, 60], id: \.self) { preset in
                         chip("\(preset)m", selected: validMinutes == preset) {
                             minutesText = String(preset)
-                            store.draftMinutes = preset
                             focusedField = nil
                         }
                     }
@@ -182,6 +284,31 @@ struct SetupView: View {
         .padding(.bottom, 11.2)
     }
 
+    private var countUpInfo: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "stopwatch")
+                .font(.system(size: 18, weight: .light))
+                .foregroundStyle(Self.accent200)
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Starts at 00:00")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(Self.text)
+                Text("Keeps counting upward until you stop it.")
+                    .font(.system(size: 11.5, weight: .regular))
+                    .foregroundStyle(Self.text55)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(11)
+        .background(Self.surface, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(Self.divider, lineWidth: 1)
+        )
+        .padding(.bottom, 11.2)
+    }
+
     private var labelField: some View {
         textInput(
             text: $labelText,
@@ -200,11 +327,11 @@ struct SetupView: View {
                 .foregroundColor(Self.text55)
 
             HStack(spacing: 5.6) {
-                chip("Bar", selected: store.displayMode == .bar) {
-                    store.displayMode = .bar
+                chip("Bar", selected: displayMode == .bar) {
+                    displayMode = .bar
                 }
-                chip("Ring", selected: store.displayMode == .ring) {
-                    store.displayMode = .ring
+                chip("Ring", selected: displayMode == .ring) {
+                    displayMode = .ring
                 }
             }
         }
@@ -213,6 +340,12 @@ struct SetupView: View {
 
     private var footer: some View {
         HStack(spacing: 8.4) {
+            Button("Cancel", action: onCancel)
+                .buttonStyle(.plain)
+                .font(.system(size: 13, weight: .regular))
+                .foregroundColor(Self.neutral400)
+                .padding(.horizontal, 4)
+
             Button(action: start) {
                 Text("Start")
                     .font(.system(size: 14, weight: .medium))
@@ -327,6 +460,8 @@ struct SetupView: View {
     // MARK: - Draft and validation
 
     private func syncDraftStrings() {
+        inputMode = store.inputMode
+        displayMode = store.displayMode
         minutesText = store.draftMinutes > 0 ? String(store.draftMinutes) : ""
         spanText = store.draftSpanMinutes.map(String.init) ?? ""
         targetTimeText = store.draftTargetTimeString
@@ -335,25 +470,25 @@ struct SetupView: View {
     }
 
     private func updateMinutes(_ value: String) {
-        if let number = Int(value) {
-            store.draftMinutes = number
-        }
+        _ = value
     }
 
     private func updateSpan(_ value: String) {
-        store.draftSpanMinutes = Int(value)
+        _ = value
     }
 
     private func updateTargetTime(_ value: String) {
-        store.draftTargetTimeString = value
+        _ = value
     }
 
     private func updateStartTime(_ value: String) {
-        store.draftStartTimeString = value
+        _ = value
     }
 
     private func updateLabel(_ value: String) {
-        store.label = value
+        if isEditing {
+            store.updatePresentation(label: value, displayMode: store.displayMode)
+        }
     }
 
     private var validMinutes: Int? {
@@ -368,8 +503,9 @@ struct SetupView: View {
     }
 
     private var validTarget: Date? {
-        guard store.inputMode == .duration || parseClock(targetTimeText) != nil else { return nil }
-        guard store.inputMode == .atTime, let time = parseClock(targetTimeText) else {
+        guard inputMode != .countUp else { return nil }
+        guard inputMode == .duration || parseClock(targetTimeText) != nil else { return nil }
+        guard inputMode == .atTime, let time = parseClock(targetTimeText) else {
             return Date().addingTimeInterval(TimeInterval((validMinutes ?? 0) * 60))
         }
 
@@ -391,25 +527,36 @@ struct SetupView: View {
     }
 
     private var isValid: Bool {
-        if store.inputMode == .duration {
+        switch inputMode {
+        case .duration:
             return validMinutes != nil && (spanText.isEmpty || validSpan != nil)
+        case .atTime:
+            return validTarget != nil
+        case .countUp:
+            return true
         }
-        return validTarget != nil
     }
 
     private var startHint: String {
+        if inputMode == .countUp { return "00:00 ↑" }
         guard isValid, let target = validTarget else { return "—" }
         let duration = max(1, Int(ceil(target.timeIntervalSinceNow)))
         let text = formatDuration(duration)
-        if store.inputMode == .atTime { return text }
+        if inputMode == .atTime { return text }
         return "\(text) · ends \(clockString(target))"
     }
 
     private func start() {
         guard isValid else { return }
-        // AppDelegate observes the synchronous `.started` transition and
-        // closes the setup popover exactly once.
+        store.inputMode = inputMode
+        store.displayMode = displayMode
+        store.draftMinutes = validMinutes ?? store.draftMinutes
+        store.draftSpanMinutes = validSpan
+        store.draftTargetTimeString = targetTimeText
+        store.draftStartTimeString = startTimeText
+        store.label = labelText
         store.startFromDraft()
+        onStart()
     }
 
     private func parseClock(_ value: String) -> (hour: Int, minute: Int)? {
