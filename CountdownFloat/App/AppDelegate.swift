@@ -156,9 +156,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         guard let session = sessions[id] else { return }
 
         switch transition {
-        case .started, .reset:
+        case .started:
             collection.add(session.store)
             session.editorController.hide()
+            session.completionController.hide()
+            session.store.setFloatHidden(false)
+            session.floatController.show()
+        case .reset:
+            collection.add(session.store)
             session.completionController.hide()
             session.store.setFloatHidden(false)
             session.floatController.show()

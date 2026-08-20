@@ -156,11 +156,15 @@ struct SetupView: View {
                 .disabled(store.isCompleted)
                 .opacity(store.isCompleted ? 0.45 : 1)
 
-                editorActionButton("Add 5 min", systemImage: "plus") {
-                    store.addFiveMinutes()
+                if store.isCountUp {
+                    editorActionButton("Reset", systemImage: "arrow.counterclockwise") {
+                        store.reset()
+                    }
+                } else {
+                    editorActionButton("Add 5 min", systemImage: "plus") {
+                        store.addFiveMinutes()
+                    }
                 }
-                .disabled(store.isCountUp)
-                .opacity(store.isCountUp ? 0.45 : 1)
             }
         }
     }

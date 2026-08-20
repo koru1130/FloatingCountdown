@@ -1,7 +1,7 @@
 <div align="center">
   <p><a href="README.zh-TW.md">繁體中文版</a></p>
   <h1>Countdown Float</h1>
-  <p>Keep your countdown visible on your desktop so you can stay focused without switching windows.</p>
+  <p>Keep multiple countdowns or count-up timers visible on your desktop without switching windows.</p>
   <p>
     <a href="https://github.com/koru1130/FloatingCountdown">
       <img src="https://img.shields.io/badge/platform-macOS%2013%2B-161826?logo=apple&logoColor=white" alt="macOS 13+">
@@ -30,13 +30,13 @@
 
 ## Product overview
 
-Countdown Float is a native macOS menu-bar countdown utility. It puts a lightweight, draggable, always-on-top countdown float on your desktop, so you can keep an eye on your progress while coding, reading, attending a meeting, running a Pomodoro session, or waiting for a specific time.
+Countdown Float is a native macOS menu-bar timer utility. It puts lightweight, draggable, always-on-top timer floats on your desktop, so you can keep an eye on your progress while coding, reading, attending a meeting, running a Pomodoro session, or waiting for a specific time.
 
-The float, menu-bar item, setup panel, and completion notification all use one shared countdown state. Hiding the float only hides the window—the countdown continues to run in the background.
+You can run multiple timers at once. Each timer has its own state, float, editor, and completion flow, while the menu-bar item provides one place to add and manage them. Hiding one float only hides that window—the timer continues to run in the background.
 
 ### ADHD and time blindness
 
-For people with ADHD-related time blindness—or anyone who loses track of time while deeply focused—Countdown Float provides a persistent, glanceable cue for how much time remains. Keeping the countdown visible on the desktop can make the passage of time easier to notice without repeatedly switching away from the current task. It is a productivity aid, not a medical or diagnostic tool.
+For people with ADHD-related time blindness—or anyone who loses track of time while deeply focused—Countdown Float provides persistent, glanceable time cues. Keeping timers visible on the desktop can make elapsed and remaining time easier to notice without repeatedly switching away from the current task. It is a productivity aid, not a medical or diagnostic tool.
 
 > This project is provided as an Xcode-buildable MVP source project. A prebuilt `.app` is also available in the v0.1.0 release.
 
@@ -46,15 +46,17 @@ For people with ADHD-related time blindness—or anyone who loses track of time 
 
 ## Features
 
-- **Desktop countdown float**: Borderless, translucent, always-on-top, draggable, and available across Spaces.
-- **Two display modes**: Choose between a Bar progress indicator and a Ring progress indicator.
-- **Two input modes**: Start a countdown from a duration or set an absolute target time.
+- **Multiple independent timers**: Create any number of timers from the menu bar and control each one separately.
+- **Desktop timer floats**: Borderless, translucent, always-on-top, draggable, and available across Spaces.
+- **Three timer modes**: Start a Duration countdown, count down to an absolute time, or Count up from `00:00`.
+- **Countdown display modes**: Duration and At a time support Bar or Ring; Count up intentionally uses Bar only.
 - **Flexible progress span**: Configure a Full span or Start time so the progress bar or ring can represent a larger work session.
-- **Labels**: Give a countdown a task name, meeting name, or any other custom label.
-- **Full lifecycle controls**: Start, Pause, Resume, Add 5 min, Stop, and End after completion.
+- **Labels**: Give each timer a task name, meeting name, or any other custom label, and edit it while the timer is running.
+- **Per-timer controls**: Show or hide, edit, Pause, Resume, extend a countdown, reset a Count up timer, or Stop one timer without affecting the others.
+- **Compact edit panel**: Opens beside its timer and contains only the label, Pause／Resume, and Add 5 min controls—or Reset for Count up; close it with the `×` button or by moving focus elsewhere.
 - **Urgent state**: The final five minutes use a highlighted border, glow, and scale treatment.
-- **Count-up after completion**: Once the countdown reaches zero, it displays `+mm:ss` so you can see how long it has been over time.
-- **Flexible float size**: Adjust the persisted 75%–150% size from the menu bar or by scrolling while the pointer is over the countdown.
+- **Overtime after countdown completion**: Once a countdown reaches zero, it displays `+mm:ss` so you can see how long it has run past zero.
+- **Flexible float size**: Adjust each float's persisted 75%–150% size by scrolling while the pointer is over it.
 - **System notifications**: Receive a macOS notification when the countdown completes, with direct `Add 5 min` and `End` actions.
 - **No third-party dependencies**: Built with SwiftUI, AppKit, Combine, and UserNotifications.
 
@@ -62,11 +64,12 @@ For people with ADHD-related time blindness—or anyone who loses track of time 
 
 | Surface | Description |
 | --- | --- |
-| **Float — Bar** | Shows the time, a horizontal progress bar, and an end time or label. |
-| **Float — Ring** | Shows remaining progress as a circular ring in a compact layout. |
-| **Setup panel** | Configure Duration or At a time, Full span, Start time, a label, and the float style. |
-| **Menu-bar extra** | Shows the current remaining time, or `Set` when no countdown is active. |
-| **Countdown menu** | Control float visibility, edit the countdown, pause, extend, stop, or quit. |
+| **Float — Bar** | Shows a countdown or count-up time, a horizontal progress bar, and an end time or label. |
+| **Float — Ring** | Shows countdown progress as a circular ring in a compact layout; it is not used for Count up. |
+| **New timer panel** | Configure Duration, At a time, or Count up, plus the options available for that mode. |
+| **Edit panel** | Opens beside one float with a live label field, Pause／Resume, Add 5 min for countdowns or Reset for Count up, and an upper-right `×`. |
+| **Menu-bar extra** | Shows a representative timer and `+N` when more timers are active, or `New` when none are active. |
+| **Countdown menu** | Lists all timers and provides New, show／hide, edit, pause／resume, extend, stop, and quit actions. Stopping a timer keeps the menu open. |
 | **Completion toast / notification** | Shows the over-time state and provides extend or end actions. |
 
 The Ring and Bar screenshots above show the current float surfaces, and the Xcode screenshot shows the app running alongside its source. The complete UI states reference is available at [`DesignFromClaude/handoff/ui-states.png`](DesignFromClaude/handoff/ui-states.png); it is a design reference rather than a simulated desktop screenshot.
@@ -88,7 +91,7 @@ cd FloatingCountdown
 open CountdownFloat.xcodeproj
 ```
 
-In Xcode, select the `CountdownFloat` scheme and press Run. The app is a menu-bar app, so it does not show a regular application icon in the Dock. On first launch, the setup panel opens next to the menu-bar item.
+In Xcode, select the `CountdownFloat` scheme and press Run. The app is a menu-bar app, so it does not show a regular application icon in the Dock. On launch, the New countdown panel opens near the upper-right of the current screen.
 
 ### Building from the command line
 
@@ -113,37 +116,41 @@ You can also use the project-local script to build and launch the app:
 
 ## How to use
 
-1. Click the Countdown Float item in the menu bar to open the `Set countdown` panel.
-2. Choose an input mode:
+1. Click the Countdown Float item in the menu bar to open the timer list, then click `New`. The app also opens a New countdown panel when it launches.
+2. Choose a timer mode:
    - **Duration**: Enter 1–600 minutes, or choose the 5, 15, 25, or 60-minute preset.
    - **At a time**: Enter a target time in `HH:mm`; a time that has already passed is treated as tomorrow.
-3. Optionally enter a Full span, Start time, and Label.
-4. Choose `Bar` or `Ring`, then press `Start`.
-5. Drag the float to the position you want. Hover over it to reveal the reconfigure and hide controls, or scroll up/down to enlarge/shrink it.
-6. Click the menu-bar item to open the control menu, including Pause／Resume, Add 5 min, Float size, and Stop.
-7. When the countdown completes, the float switches to counting-up mode and a completion notification appears. If macOS asks for notification permission, allow it to receive system notifications and their quick actions.
+   - **Count up**: Start at `00:00` and continue upward until stopped.
+3. Optionally enter a Label. Duration also supports Full span; At a time supports Start time.
+4. For a countdown, choose `Bar` or `Ring`. Count up is always Bar. Press `Start`.
+5. Repeat `New` to create more independent timers. Drag each float into position, or scroll over it to enlarge or shrink it.
+6. Hover over a float to reveal its edit (`…`) and hide (`×`) controls. The compact editor opens beside that float; label changes are applied immediately. Countdown editors provide Add 5 min, while Count up editors provide Reset to `00:00`. The panel closes via its `×` or when it loses focus.
+7. Use each menu row to show／hide, edit, Pause／Resume, Add 5 min for a countdown, or Stop that timer. Stopping one removes its row without closing the menu.
+8. When a countdown completes, its float switches to overtime display and its own completion notification appears. If macOS asks for notification permission, allow it to receive system notifications and their quick actions.
 
 ### Time and progress rules
 
 - Normal time uses `mm:ss`; durations longer than one hour use `h:mm:ss`.
 - After completion, the display uses `+mm:ss` or `+h:mm:ss` to show elapsed overtime.
+- Count up starts at `00:00`, has no target or completion notification, uses Bar only, and provides Reset instead of Add 5 min in its editor.
 - The default Urgent threshold is five minutes remaining.
 - `Add 5 min` adds 300 seconds and extends the total progress span.
-- Hiding the float does not pause the countdown; the menu-bar item and notifications continue to update.
+- Hiding a float does not pause its timer; the menu-bar item and notifications continue to update.
 - Bar mode drains to zero at completion; Ring mode closes into a full circle.
 
 ## Interaction states
 
 ```text
-Idle ── Start ──▶ Running ── Pause ──▶ Paused
-  ▲                 │  ▲                │
-  │                 │  └── Resume ──────┘
-  │                 │
-  │                 ├── Add 5 min ──▶ Running
-  │                 │
-  │                 └── Reach zero ──▶ Done / counting up
-  │                                      │
-  └──────────── Stop / End / Reset ◀────┘
+New ── Start countdown ──▶ Running ◀── Pause / Resume ──▶ Paused
+                              │
+                              ├── Add 5 min ───────────▶ Running
+                              └── Reach zero ──────────▶ Done / overtime
+
+New ── Start Count up ───▶ Running upward ◀── Pause / Resume ──▶ Paused
+                                  ▲
+                                  └── Reset to 00:00 ──────────┘
+
+Any active timer ── Stop / End ──▶ Removed
 ```
 
 ## Project structure
@@ -155,12 +162,12 @@ FloatingCountdown/
 ├── CountdownFloat.xcodeproj/
 ├── CountdownFloat/
 │   ├── App/              # SwiftUI App and AppKit coordinator
-│   ├── Model/            # Countdown state, time calculations, geometry, and scale settings
-│   ├── Panels/           # Always-on-top float and completion NSPanel
+│   ├── Model/            # Timer collection/state, time calculations, geometry, and scale settings
+│   ├── Panels/           # Float, editor, and completion NSPanel controllers
 │   ├── Services/         # macOS UserNotifications integration
 │   ├── Views/            # SwiftUI float, setup panel, menu, and notification UI
 │   └── Info.plist
-├── CountdownFloatTests/  # CountdownStore, geometry, and scale-setting tests
+├── CountdownFloatTests/  # Store, collection, geometry, and scale-setting tests
 ├── DesignFromClaude/     # UI states and design handoff documents
 └── script/               # Local build and launch scripts
 ```
@@ -169,14 +176,17 @@ FloatingCountdown/
 
 | Component | Responsibility |
 | --- | --- |
-| `CountdownStore` | Uses `@MainActor` to manage the countdown lifecycle, formatting, progress, Urgent state, and completion events. |
-| `AppDelegate` | Coordinates the menu-bar item, popover, float, completion panel, and notification callbacks. |
+| `CountdownCollection` | Publishes the active timer stores shown by the menu-bar list. |
+| `CountdownStore` | Uses `@MainActor` to manage one countdown or count-up timer, including lifecycle, formatting, progress, Urgent state, and completion events. |
+| `AppDelegate` | Owns the per-timer sessions and coordinates the menu-bar item, timer list, panels, and notification callbacks. |
+| `SetupPanelController` | Presents the New timer panel or the compact editor beside the selected timer, with focus-loss dismissal for editing. |
 | `FloatPanelController` | Manages the borderless always-on-top float, drag position, screen clamping, and size scaling. |
 | `FloatView` | Renders Bar／Ring modes, state styling, hover controls, and the completion pulse effect. |
+| `CompletionPanelController` | Presents the completion toast for the timer that reached zero. |
 | `NotificationManager` | Requests notification permission, posts completion notifications, and handles `Add 5 min`／`End` actions. |
 | `FloatGeometry` / `FloatScaleSettings` | Provides testable window geometry calculations and a persisted 75%–150% display scale. |
 
-The app uses one shared `CountdownStore`. This keeps the float, menu-bar controls, setup panel, and notification actions synchronized when the float is hidden or a countdown is extended from another surface.
+Each active timer owns an independent `CountdownStore`, float panel, editor panel, and completion panel. Actions use the store's UUID so menu and notification operations update the intended timer without affecting the others.
 
 ## Building and testing
 
@@ -194,7 +204,8 @@ xcodebuild \
 
 The tests cover:
 
-- `CountdownStore` Start, Pause, Resume, completion, overtime, Add 5 min, Stop, and Reset behavior.
+- `CountdownStore` behavior for starting countdowns and Count up timers, Pause, Resume, completion, overtime, Add 5 min, Stop, and Reset.
+- `CountdownCollection` behavior for multiple independent timer stores.
 - Duration and At a time parsing, including the “past target means tomorrow” rule.
 - `mm:ss`, `h:mm:ss`, and `+mm:ss` formatting.
 - Initial float placement, screen-boundary clamping, resize anchors, persisted scale settings, and scroll-to-zoom step handling.
@@ -204,8 +215,8 @@ The tests cover:
 ## Data, permissions, and privacy
 
 - No account is required, and the app makes no network requests or calls to a remote service.
-- Countdown state lives only in the current app process; an active countdown is not restored after relaunch.
-- The float's position and display scale are stored locally in `UserDefaults` so they can be restored on the next launch.
+- Timer state lives only in the current app process; active timers are not restored after relaunch.
+- Float positions and display scales are stored locally in `UserDefaults` so they can be restored on the next launch.
 - System notifications are used only when a countdown completes. macOS owns the notification permission, and you can disable it at any time in System Settings.
 
 ## Design documents
@@ -220,7 +231,7 @@ Design and implementation reference material is available in `DesignFromClaude/`
 ## Known limitations
 
 - There is currently no signing, packaging, or automatic update workflow.
-- Active countdowns are not persisted; a new countdown must be configured after quitting the app.
+- Active timers are not persisted; new timers must be configured after quitting the app.
 - Notification behavior depends on macOS notification permissions and system settings.
 
 ## Contributing
