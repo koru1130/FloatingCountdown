@@ -1,4 +1,5 @@
 import AppKit
+import Combine
 import SwiftUI
 
 /// Owns one countdown's editor and positions it beside that countdown's float.
@@ -7,24 +8,30 @@ import SwiftUI
 @MainActor
 final class SetupPanelController: NSObject, NSWindowDelegate {
     let store: CountdownStore
+    let scaleSettings: FloatScaleSettings
     let panel: CountdownPanel
 
     private let hostingView: NSHostingView<SetupView>
     private let onCancel: () -> Void
     private let onStart: () -> Void
     private var closesOnFocusLoss = false
+    private weak var anchorPanel: NSPanel?
+    private var scaleObservation: AnyCancellable?
 
     init(
         store: CountdownStore,
+        scaleSettings: FloatScaleSettings,
         onCancel: @escaping () -> Void,
         onStart: @escaping () -> Void
     ) {
         self.store = store
+        self.scaleSettings = scaleSettings
         self.onCancel = onCancel
         self.onStart = onStart
 
         let root = SetupView(
             store: store,
+            scaleSettings: scaleSettings,
             onCancel: onCancel,
             onStart: onStart
         )
@@ -42,12 +49,24 @@ final class SetupPanelController: NSObject, NSWindowDelegate {
         panel.isMovableByWindowBackground = true
         panel.level = .floating
         panel.setAccessibilityTitle("Countdown editor")
+
+        scaleObservation = scaleSettings.$scale
+            .dropFirst()
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                DispatchQueue.main.async { [weak self] in
+                    guard let self, self.panel.isVisible else { return }
+                    self.place(beside: self.anchorPanel)
+                }
+            }
     }
 
     func show(isEditing: Bool, beside floatPanel: NSPanel?) {
         closesOnFocusLoss = isEditing
+        anchorPanel = floatPanel
         hostingView.rootView = SetupView(
             store: store,
+            scaleSettings: scaleSettings,
             isEditing: isEditing,
             onCancel: onCancel,
             onStart: onStart
@@ -66,6 +85,7 @@ final class SetupPanelController: NSObject, NSWindowDelegate {
 
     func hide() {
         closesOnFocusLoss = false
+        anchorPanel = nil
         panel.orderOut(nil)
     }
 

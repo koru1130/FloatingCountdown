@@ -53,10 +53,10 @@ For people with ADHD-related time blindness—or anyone who loses track of time 
 - **Flexible progress span**: Configure a Full span or Start time so the progress bar or ring can represent a larger work session.
 - **Labels**: Give each timer a task name, meeting name, or any other custom label, and edit it while the timer is running.
 - **Per-timer controls**: Show or hide, edit, Pause, Resume, extend a countdown, reset a Count up timer, or Stop one timer without affecting the others.
-- **Compact edit panel**: Opens beside its timer and contains only the label, Pause／Resume, and Add 5 min controls—or Reset for Count up; close it with the `×` button or by moving focus elsewhere.
+- **Compact edit panel**: Opens beside its timer with label, Pause／Resume, per-timer size, and Add 5 min controls—or Reset for Count up; close it with the `×` button or by moving focus elsewhere.
 - **Urgent state**: The final five minutes use a highlighted border, glow, and scale treatment.
 - **Overtime after countdown completion**: Once a countdown reaches zero, it displays `+mm:ss` so you can see how long it has run past zero.
-- **Flexible float size**: Adjust each float's persisted 75%–150% size by scrolling while the pointer is over it.
+- **Flexible float size**: Adjust each float's persisted 75%–150% size from its editor or by scrolling while the pointer is over it.
 - **System notifications**: Receive a macOS notification when the countdown completes, with direct `Add 5 min` and `End` actions.
 - **No third-party dependencies**: Built with SwiftUI, AppKit, Combine, and UserNotifications.
 
@@ -67,7 +67,7 @@ For people with ADHD-related time blindness—or anyone who loses track of time 
 | **Float — Bar** | Shows a countdown or count-up time, a horizontal progress bar, and an end time or label. |
 | **Float — Ring** | Shows countdown progress as a circular ring in a compact layout; it is not used for Count up. |
 | **New timer panel** | Configure Duration, At a time, or Count up, plus the options available for that mode. |
-| **Edit panel** | Opens beside one float with a live label field, Pause／Resume, Add 5 min for countdowns or Reset for Count up, and an upper-right `×`. |
+| **Edit panel** | Opens beside one float with a live label field, Pause／Resume, 75%–150% size controls, Add 5 min for countdowns or Reset for Count up, and an upper-right `×`. |
 | **Menu-bar extra** | Shows a representative timer and `+N` when more timers are active, or `New` when none are active. |
 | **Countdown menu** | Lists all timers and provides New, show／hide, edit, pause／resume, extend, stop, and quit actions. Stopping a timer keeps the menu open. |
 | **Completion toast / notification** | Shows the over-time state and provides extend or end actions. |
@@ -124,7 +124,7 @@ You can also use the project-local script to build and launch the app:
 3. Optionally enter a Label. Duration also supports Full span; At a time supports Start time.
 4. For a countdown, choose `Bar` or `Ring`. Count up is always Bar. Press `Start`.
 5. Repeat `New` to create more independent timers. Drag each float into position, or scroll over it to enlarge or shrink it.
-6. Hover over a float to reveal its edit (`…`) and hide (`×`) controls. The compact editor opens beside that float; label changes are applied immediately. Countdown editors provide Add 5 min, while Count up editors provide Reset to `00:00`. The panel closes via its `×` or when it loses focus.
+6. Hover over a float to reveal its edit (`…`) and hide (`×`) controls. The compact editor opens beside that float; label changes are applied immediately, and the `−`／`+` controls resize only that float between 75% and 150%. Countdown editors provide Add 5 min, while Count up editors provide Reset to `00:00`. The panel closes via its `×` or when it loses focus.
 7. Use each menu row to show／hide, edit, Pause／Resume, Add 5 min for a countdown, or Stop that timer. Stopping one removes its row without closing the menu.
 8. When a countdown completes, its float switches to overtime display and its own completion notification appears. If macOS asks for notification permission, allow it to receive system notifications and their quick actions.
 

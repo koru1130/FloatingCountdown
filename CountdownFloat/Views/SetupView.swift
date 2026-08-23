@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// The countdown editor displayed inside the menu-bar setup popover.
+/// The new-timer form and compact editor displayed in a key-capable panel.
 ///
 /// Draft values live in `CountdownStore` so the menu-bar item, setup panel and
 /// floating window all observe the same state.  The small local string buffers
@@ -8,6 +8,7 @@ import SwiftUI
 /// store receives the value as soon as it becomes parseable.
 struct SetupView: View {
     @ObservedObject private var store: CountdownStore
+    @ObservedObject private var scaleSettings: FloatScaleSettings
 
     @State private var inputMode: CountdownInputMode
     @State private var displayMode: CountdownDisplayMode
@@ -28,11 +29,13 @@ struct SetupView: View {
 
     init(
         store: CountdownStore,
+        scaleSettings: FloatScaleSettings,
         isEditing: Bool = false,
         onCancel: @escaping () -> Void = {},
         onStart: @escaping () -> Void = {}
     ) {
         _store = ObservedObject(wrappedValue: store)
+        _scaleSettings = ObservedObject(wrappedValue: scaleSettings)
         _inputMode = State(initialValue: store.inputMode)
         _displayMode = State(initialValue: store.displayMode)
         _minutesText = State(initialValue: store.draftMinutes > 0 ? String(store.draftMinutes) : "")
@@ -146,6 +149,8 @@ struct SetupView: View {
                 )
             }
 
+            floatSizeControls
+
             HStack(spacing: 8) {
                 editorActionButton(
                     pauseActionTitle,
@@ -165,6 +170,38 @@ struct SetupView: View {
                         store.addFiveMinutes()
                     }
                 }
+            }
+        }
+    }
+
+    private var floatSizeControls: some View {
+        HStack(spacing: 8) {
+            Text("FLOAT SIZE")
+                .font(.system(size: 11, weight: .regular))
+                .tracking(0.88)
+                .foregroundStyle(Self.text55)
+
+            Spacer(minLength: 8)
+
+            scaleActionButton(
+                "minus",
+                accessibilityLabel: "Decrease float size",
+                isEnabled: scaleSettings.scale > FloatScaleSettings.minimumScale
+            ) {
+                scaleSettings.decrease()
+            }
+
+            Text("\(Int((scaleSettings.scale * 100).rounded()))%")
+                .font(.system(size: 12, weight: .medium, design: .monospaced))
+                .foregroundStyle(Self.accent200)
+                .frame(width: 44)
+
+            scaleActionButton(
+                "plus",
+                accessibilityLabel: "Increase float size",
+                isEnabled: scaleSettings.scale < FloatScaleSettings.maximumScale
+            ) {
+                scaleSettings.increase()
             }
         }
     }
@@ -193,6 +230,27 @@ struct SetupView: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+    }
+
+    private func scaleActionButton(
+        _ systemImage: String,
+        accessibilityLabel: String,
+        isEnabled: Bool,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Image(systemName: systemImage)
+                .font(.system(size: 10.5, weight: .semibold))
+                .foregroundStyle(Self.accent200)
+                .frame(width: 28, height: 26)
+                .background(Self.accent.opacity(0.16), in: RoundedRectangle(cornerRadius: 6))
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .disabled(!isEnabled)
+        .opacity(isEnabled ? 1 : 0.4)
+        .accessibilityLabel(accessibilityLabel)
+        .help(accessibilityLabel)
     }
 
     private var durationFields: some View {

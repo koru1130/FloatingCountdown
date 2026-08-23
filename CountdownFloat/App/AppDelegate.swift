@@ -91,6 +91,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         )
         let editorController = SetupPanelController(
             store: store,
+            scaleSettings: scaleSettings,
             onCancel: { [weak self] in self?.cancelEditor(for: id) },
             onStart: { [weak self] in self?.sessions[id]?.editorController.hide() }
         )
