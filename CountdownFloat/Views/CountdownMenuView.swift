@@ -1,256 +1,219 @@
 import SwiftUI
 
-/// The custom menu displayed from the menu-bar extra.
-///
-/// Float visibility belongs to the window coordinator rather than the countdown
-/// model, so show/hide are injected as closures.  Countdown operations themselves
-/// are intentionally routed through `CountdownStore` to keep menu-bar and float
-/// state in sync.
+/// Menu-bar overview for all active countdowns. Each row observes only its own
+/// store and routes window operations by the store's stable identifier.
 struct CountdownMenuView: View {
-    @ObservedObject private var store: CountdownStore
-    @ObservedObject private var scaleSettings: FloatScaleSettings
+    @ObservedObject private var collection: CountdownCollection
 
-    private let isFloatHidden: Bool
-    private let onShowFloat: () -> Void
-    private let onHideFloat: () -> Void
-    private let onChange: () -> Void
-    private let onDecreaseFloatSize: () -> Void
-    private let onResetFloatSize: () -> Void
-    private let onIncreaseFloatSize: () -> Void
-    private let onReset: () -> Void
-    private let onStop: (() -> Void)?
+    private let onAdd: () -> Void
+    private let onEdit: (UUID) -> Void
+    private let onToggleVisibility: (UUID) -> Void
+    private let onStop: (UUID) -> Void
     private let onDismiss: () -> Void
     private let onQuit: () -> Void
 
     init(
-        store: CountdownStore,
-        isFloatHidden: Bool = false,
-        onShowFloat: @escaping () -> Void = {},
-        onHideFloat: @escaping () -> Void = {},
-        onChange: @escaping () -> Void = {},
-        scaleSettings: FloatScaleSettings = FloatScaleSettings(),
-        onDecreaseFloatSize: (() -> Void)? = nil,
-        onResetFloatSize: (() -> Void)? = nil,
-        onIncreaseFloatSize: (() -> Void)? = nil,
-        onReset: (() -> Void)? = nil,
-        onCancel: (() -> Void)? = nil,
-        onStop: (() -> Void)? = nil,
+        collection: CountdownCollection,
+        onAdd: @escaping () -> Void,
+        onEdit: @escaping (UUID) -> Void,
+        onToggleVisibility: @escaping (UUID) -> Void,
+        onStop: @escaping (UUID) -> Void,
         onDismiss: @escaping () -> Void = {},
         onQuit: @escaping () -> Void = {}
     ) {
-        self.store = store
-        self._scaleSettings = ObservedObject(wrappedValue: scaleSettings)
-        self.isFloatHidden = isFloatHidden
-        self.onShowFloat = onShowFloat
-        self.onHideFloat = onHideFloat
-        self.onChange = onChange
-        self.onDecreaseFloatSize = onDecreaseFloatSize ?? { scaleSettings.decrease() }
-        self.onResetFloatSize = onResetFloatSize ?? { scaleSettings.reset() }
-        self.onIncreaseFloatSize = onIncreaseFloatSize ?? { scaleSettings.increase() }
-        self.onReset = onReset ?? { store.cancel() }
-        // Keep accepting the old callback label for clients that construct the
-        // menu directly; new callers should use `onStop`.
-        self.onStop = onStop ?? onCancel
+        self.collection = collection
+        self.onAdd = onAdd
+        self.onEdit = onEdit
+        self.onToggleVisibility = onToggleVisibility
+        self.onStop = onStop
         self.onDismiss = onDismiss
         self.onQuit = onQuit
     }
 
-    private var pauseTitle: String {
-        if store.isCompleted { return "Reset" }
-        return store.isPaused ? "Resume" : "Pause"
-    }
-
-    private func performAndDismiss(_ action: @escaping () -> Void) {
-        // Dismiss the menu before performing an action that may open the setup
-        // popover.  Closing afterwards would immediately close the new popover.
-        onDismiss()
-        action()
-    }
-
     var body: some View {
         VStack(spacing: 0) {
-            MenuRow(title: isFloatHidden ? "Show float" : "Hide float") {
-                performAndDismiss(isFloatHidden ? onShowFloat : onHideFloat)
-            }
+            HStack {
+                Text("Countdowns")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(MenuPalette.text)
 
-            MenuRow(title: "Edit") {
-                performAndDismiss(onChange)
-            }
+                Spacer()
 
-            MenuRow(title: pauseTitle) {
-                if store.isCompleted {
-                    performAndDismiss(onReset)
-                } else {
-                    performAndDismiss { store.togglePause() }
+                Button {
+                    performAndDismiss(onAdd)
+                } label: {
+                    Label("New", systemImage: "plus")
+                        .font(.system(size: 12.5, weight: .medium))
+                        .foregroundStyle(MenuPalette.accent200)
+                        .padding(.horizontal, 9)
+                        .frame(height: 28)
+                        .background(MenuPalette.accent.opacity(0.18), in: RoundedRectangle(cornerRadius: 7))
                 }
+                .buttonStyle(.plain)
+                .accessibilityLabel("New countdown")
             }
-            .disabled(!store.hasCountdown)
+            .padding(.horizontal, 11)
+            .padding(.vertical, 8)
 
-            MenuRow(title: "Add 5 min") {
-                performAndDismiss { store.addFiveMinutes() }
-            }
-            .disabled(!store.hasCountdown)
-
-            floatSizeRow
-
-            Rectangle()
-                .fill(CountdownMenuPalette.separator)
-                .frame(height: 1)
-                .padding(.vertical, 5.6)
-                .padding(.horizontal, 11.2)
-
-            MenuRow(title: "Stop", tint: CountdownMenuPalette.neutral400) {
-                performAndDismiss {
-                    store.stop()
-                    onStop?()
+            if collection.stores.isEmpty {
+                VStack(spacing: 7) {
+                    Image(systemName: "timer")
+                        .font(.system(size: 20, weight: .light))
+                    Text("No active countdowns")
+                        .font(.system(size: 12.5))
                 }
-            }
-            .disabled(!store.hasCountdown)
+                .foregroundStyle(MenuPalette.muted)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 24)
+            } else {
+                Divider().overlay(MenuPalette.separator)
 
-            MenuRow(title: "Quit", tint: CountdownMenuPalette.neutral400) {
+                ScrollView {
+                    LazyVStack(spacing: 6) {
+                        ForEach(collection.stores, id: \.id) { store in
+                            CountdownMenuTimerRow(
+                                store: store,
+                                onEdit: { performAndDismiss { onEdit(store.id) } },
+                                onToggleVisibility: {
+                                    performAndDismiss { onToggleVisibility(store.id) }
+                                },
+                                // Keep the menu open while its list updates.
+                                onStop: { onStop(store.id) }
+                            )
+                        }
+                    }
+                    .padding(8)
+                }
+                .frame(maxHeight: 420)
+            }
+
+            Divider().overlay(MenuPalette.separator)
+
+            Button {
                 performAndDismiss(onQuit)
+            } label: {
+                Text("Quit Countdown Float")
+                    .font(.system(size: 12.5))
+                    .foregroundStyle(MenuPalette.muted)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 11)
+                    .frame(height: 32)
+                    .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
         }
-        .padding(8.4)
-        .frame(width: 232)
+        .padding(6)
+        .frame(width: 300)
         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         .background(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(CountdownMenuPalette.surface.opacity(0.86))
+                .fill(MenuPalette.surface.opacity(0.88))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(CountdownMenuPalette.edge, lineWidth: 1)
+                .stroke(MenuPalette.edge, lineWidth: 1)
         )
-        .shadow(color: CountdownMenuPalette.shadow, radius: 22, x: 0, y: 18)
-        .transition(.opacity.combined(with: .offset(y: -6)))
-        .animation(.easeOut(duration: 0.16), value: store.hasCountdown)
+        .environment(\.colorScheme, .dark)
     }
 
-    private var floatSizeRow: some View {
-        HStack(spacing: 5.6) {
-            Text("Float size")
-                .font(.system(size: 13.5, weight: .regular))
-                .foregroundStyle(CountdownMenuPalette.text)
-                .lineLimit(1)
-
-            Spacer(minLength: 0)
-
-            FloatSizeButton(
-                symbol: "−",
-                accessibilityLabel: "Decrease float size",
-                isDisabled: isAtMinimumScale
-            ) {
-                onDecreaseFloatSize()
-            }
-
-            Button(action: onResetFloatSize) {
-                Text(scalePercentage)
-                    .font(.system(size: 12.5, weight: .regular, design: .monospaced))
-                    .foregroundStyle(CountdownMenuPalette.text)
-                    .frame(minWidth: 42, minHeight: 28)
-                    .contentShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
-            }
-            .buttonStyle(.plain)
-            .background(
-                RoundedRectangle(cornerRadius: 4, style: .continuous)
-                    .fill(CountdownMenuPalette.accent.opacity(0.14))
-            )
-            .accessibilityLabel("Reset float size")
-            .accessibilityValue(Text("\(scalePercent) percent"))
-
-            FloatSizeButton(
-                symbol: "+",
-                accessibilityLabel: "Increase float size",
-                isDisabled: isAtMaximumScale
-            ) {
-                onIncreaseFloatSize()
-            }
-        }
-        .frame(maxWidth: .infinity, minHeight: 28, alignment: .leading)
-        .padding(.vertical, 1)
-        .padding(.horizontal, 11.2)
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel("Float size")
-        .accessibilityValue(Text("\(scalePercent) percent"))
-    }
-
-    private var scalePercent: Int {
-        Int((scaleSettings.scale * 100).rounded())
-    }
-
-    private var scalePercentage: String {
-        "\(scalePercent)%"
-    }
-
-    private var isAtMinimumScale: Bool {
-        scaleSettings.scale <= FloatScaleSettings.minimumScale + 0.000_1
-    }
-
-    private var isAtMaximumScale: Bool {
-        scaleSettings.scale >= FloatScaleSettings.maximumScale - 0.000_1
+    private func performAndDismiss(_ action: @escaping () -> Void) {
+        onDismiss()
+        action()
     }
 }
 
-private struct FloatSizeButton: View {
-    let symbol: String
-    let accessibilityLabel: String
-    let isDisabled: Bool
-    let action: () -> Void
+private struct CountdownMenuTimerRow: View {
+    @ObservedObject var store: CountdownStore
+    let onEdit: () -> Void
+    let onToggleVisibility: () -> Void
+    let onStop: () -> Void
+
+    private var title: String {
+        let value = store.label.trimmingCharacters(in: .whitespacesAndNewlines)
+        return value.isEmpty ? (store.isCountUp ? "Stopwatch" : "Countdown") : value
+    }
 
     var body: some View {
+        VStack(spacing: 7) {
+            HStack(spacing: 8) {
+                Circle()
+                    .fill(store.isCompleted ? MenuPalette.urgent : MenuPalette.accent)
+                    .frame(width: 7, height: 7)
+
+                Text(title)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(MenuPalette.text)
+                    .lineLimit(1)
+
+                Spacer(minLength: 4)
+
+                Text(store.displayText)
+                    .font(.system(size: 13, weight: .regular, design: .monospaced))
+                    .foregroundStyle(store.isCompleted ? MenuPalette.urgent : MenuPalette.accent200)
+            }
+
+            HStack(spacing: 4) {
+                timerButton(
+                    store.floatHidden ? "eye" : "eye.slash",
+                    label: store.floatHidden ? "Show float" : "Hide float",
+                    action: onToggleVisibility
+                )
+                timerButton("pencil", label: "Edit countdown", action: onEdit)
+                timerButton(
+                    store.isPaused ? "play.fill" : "pause.fill",
+                    label: store.isPaused ? "Resume" : "Pause"
+                ) {
+                    store.togglePause()
+                }
+                .disabled(store.isCompleted)
+                timerButton("plus.circle", label: "Add 5 minutes") {
+                    store.addFiveMinutes()
+                }
+                .disabled(store.isCountUp)
+                .opacity(store.isCountUp ? 0.4 : 1)
+
+                Spacer(minLength: 2)
+
+                timerButton("stop.fill", label: "Stop countdown", tint: MenuPalette.muted, action: onStop)
+            }
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 9)
+        .background(MenuPalette.card, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 9, style: .continuous)
+                .stroke(MenuPalette.edge, lineWidth: 1)
+        )
+    }
+
+    private func timerButton(
+        _ symbol: String,
+        label: String,
+        tint: Color = MenuPalette.text,
+        action: @escaping () -> Void
+    ) -> some View {
         Button(action: action) {
-            Text(symbol)
-                .font(.system(size: 16, weight: .regular))
-                .foregroundStyle(CountdownMenuPalette.text)
-                .frame(width: 28, height: 28)
+            Image(systemName: symbol)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(tint)
+                .frame(width: 28, height: 24)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .background(
-            RoundedRectangle(cornerRadius: 4, style: .continuous)
-                .fill(CountdownMenuPalette.accent.opacity(0.14))
-        )
-        .contentShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
-        .disabled(isDisabled)
-        .opacity(isDisabled ? 0.45 : 1)
-        .accessibilityLabel(accessibilityLabel)
+        .background(MenuPalette.accent.opacity(0.12), in: RoundedRectangle(cornerRadius: 5))
+        .help(label)
+        .accessibilityLabel(label)
     }
 }
 
-private struct MenuRow: View {
-    let title: String
-    var tint: Color = CountdownMenuPalette.text
-    let action: () -> Void
-    @State private var isHovered = false
-
-    var body: some View {
-        Button(action: action) {
-            Text(title)
-                .font(.system(size: 13.5, weight: .regular))
-                .foregroundStyle(tint)
-                .lineLimit(1)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.vertical, 7)
-                .padding(.horizontal, 11.2)
-                .contentShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
-        }
-        .buttonStyle(.plain)
-        .background(
-            RoundedRectangle(cornerRadius: 4, style: .continuous)
-                .fill(CountdownMenuPalette.accent.opacity(isHovered ? 0.18 : 0))
-        )
-        .onHover { isHovered = $0 }
-        .animation(.easeOut(duration: 0.1), value: isHovered)
-    }
-}
-
-private enum CountdownMenuPalette {
+private enum MenuPalette {
     static let text = Color(red: 0.9137, green: 0.9137, blue: 0.9294)
-    static let neutral400 = Color(red: 0.6980, green: 0.7137, blue: 0.7922)
+    static let muted = Color(red: 0.6980, green: 0.7137, blue: 0.7922)
     static let accent = Color(red: 0.5686, green: 0.5176, blue: 0.8510)
+    static let accent200 = Color(red: 0.9059, green: 0.8980, blue: 0.9961)
+    static let urgent = Color(red: 0.82, green: 0.56, blue: 0.98)
     static let surface = Color(red: 0.1373, green: 0.1451, blue: 0.1961)
-    static let edge = Color(red: 0.9137, green: 0.9137, blue: 0.9294).opacity(0.12)
-    static let separator = Color(red: 0.9137, green: 0.9137, blue: 0.9294).opacity(0.10)
-    static let shadow = Color.black.opacity(0.60)
+    static let card = Color.white.opacity(0.045)
+    static let edge = Color.white.opacity(0.12)
+    static let separator = Color.white.opacity(0.10)
 }

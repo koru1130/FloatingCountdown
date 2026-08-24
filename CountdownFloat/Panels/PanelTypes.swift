@@ -5,6 +5,7 @@ import AppKit
 enum CountdownPanelKind {
     case float
     case completion
+    case editor
 }
 
 /// Shared shell for the small, borderless windows used by Countdown Float.
@@ -38,8 +39,9 @@ final class CountdownPanel: NSPanel {
         // into dark rectangular strips along the trailing and bottom edges.
         // Let the window server render the completion notification's shadow;
         // it follows the rounded alpha shape without enlarging the hit area.
-        // Float has no window shadow, while NSPopover supplies setup's shadow.
-        hasShadow = kind == .completion
+        // Float has no window shadow. Completion and the key-capable editor
+        // use the window server's rounded alpha shadow.
+        hasShadow = kind != .float
         hidesOnDeactivate = false
         titleVisibility = .hidden
         titlebarAppearsTransparent = true
@@ -50,7 +52,7 @@ final class CountdownPanel: NSPanel {
     }
 
     override var canBecomeKey: Bool {
-        false
+        kind == .editor
     }
 
     override var canBecomeMain: Bool {
